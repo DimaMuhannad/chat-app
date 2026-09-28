@@ -44,3 +44,5 @@ dist/
 *.sqlite3
 *.db
 logs/
+uploads/
+.gemini/
