@@ -33,5 +33,15 @@ async def test_root():
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/")
         assert response.status_code == 200
+        assert "Antigravity Studio" in response.text
+
+
+@pytest.mark.anyio
+async def test_api_info():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api")
+        assert response.status_code == 200
         data = response.json()
         assert "version" in data
+        assert "message" in data

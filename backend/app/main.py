@@ -1,6 +1,9 @@
 from contextlib import asynccontextmanager
 import logging
+import os
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.health import router as health_router
 from app.api.v1.router import api_router
@@ -43,14 +46,22 @@ def create_app() -> FastAPI:
     app.include_router(health_router, tags=["Health"])
     app.include_router(api_router, prefix=settings.API_V1_STR)
 
-    @app.get("/", tags=["Root"])
-    async def root():
+    @app.get("/api", tags=["API Root"])
+    async def api_info():
         return {
             "message": f"Welcome to {settings.PROJECT_NAME} API",
             "version": settings.VERSION,
             "docs": f"{settings.API_V1_STR}/docs",
             "health": "/health",
         }
+
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    if os.path.exists(static_dir):
+        app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+        @app.get("/", tags=["Dashboard"])
+        async def dashboard_spa():
+            return FileResponse(os.path.join(static_dir, "index.html"))
 
     return app
 

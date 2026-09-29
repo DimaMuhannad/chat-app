@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: List[str] = ["*"]
     
     # Storage & Paths
-    SQLITE_DB_PATH: str = "sqlite:///./app_data.db"
+    SQLITE_DB_PATH: str = "/opt/assistant-core/data/assistant.db"
     WORKSPACE_ROOT: str = "/opt/chat-app"
     
     model_config = SettingsConfigDict(
