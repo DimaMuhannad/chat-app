@@ -89,10 +89,18 @@
         <i data-lucide="clock" class="w-4 h-4"></i>
         <span>Напоминания (Waiting For)</span>
       </button>
+      <button onclick="switchTab('security')" id="nav-security" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800/80">
+        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+        <span>Безопасность</span>
+      </button>
     </nav>
 
     <!-- RIGHT STATUS BADGES -->
     <div class="flex items-center space-x-3">
+      <button onclick="switchTab('security')" id="top-security-badge" title="Статус щита безопасности" class="hidden sm:flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700/80 px-2.5 py-1 rounded-lg border border-slate-700 text-xs transition cursor-pointer">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span class="text-slate-300 font-medium" id="top-security-label">Щит: 0 утечек</span>
+      </button>
       <div class="hidden sm:flex items-center space-x-2 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 text-xs">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
         <span class="text-slate-300">assistant-worker 24/7</span>
@@ -109,6 +117,7 @@
     <button onclick="switchTab('tasks')" class="mobile-tab px-3 py-1 rounded text-slate-400 hover:text-white">Задачи</button>
     <button onclick="switchTab('editor')" class="mobile-tab px-3 py-1 rounded text-slate-400 hover:text-white">Редактор</button>
     <button onclick="switchTab('reminders')" class="mobile-tab px-3 py-1 rounded text-slate-400 hover:text-white">Напоминания</button>
+    <button onclick="switchTab('security')" class="mobile-tab px-3 py-1 rounded text-slate-400 hover:text-white">Безопасность</button>
   </div>
 
   <!-- MAIN VIEWPORT -->
@@ -416,6 +425,137 @@
 
     </section>
 
+    <!-- ================= TAB 5: SECURITY HUB & TILES ================= -->
+    <section id="tab-security" class="tab-content hidden space-y-6">
+
+      <!-- HEADER WITH ACTIONS -->
+      <div class="bg-[#1e293b] p-5 rounded-2xl border border-slate-700/80 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <i data-lucide="shield-check" class="w-5 h-5"></i>
+            </div>
+            <h2 class="text-lg font-bold text-white tracking-tight">Security Hub & Multi-Project Policy Tile</h2>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Active Guardrail</span>
+          </div>
+          <p class="text-xs text-slate-400">
+            Оркестрация политик безопасности между публичными репозиториями ГУАП / AI Studio и закрытым NDA-контуром ООО «Тидекс».
+          </p>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <button onclick="runSecurityAudit()" id="btn-run-audit" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-500/20 transition flex items-center space-x-2">
+            <i data-lucide="scan" class="w-4 h-4"></i>
+            <span>Запустить аудит безопасности</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 INTERACTIVE SECURITY TILES (ПЛИТКИ БЕЗОПАСНОСТИ) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- TILE 1: CLEARANCE LEVEL -->
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-slate-700/70 shadow-sm relative overflow-hidden group">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-2">
+            <span class="font-medium text-slate-300">Плитка допуска</span>
+            <span class="p-1 rounded-md bg-rose-500/10 text-rose-400"><i data-lucide="lock" class="w-4 h-4"></i></span>
+          </div>
+          <div class="text-xl font-bold text-white" id="sec-clearance-status">🔴 NDA Air-gap</div>
+          <p class="text-[11px] text-slate-400 mt-1">ООО «Тидекс» (Строгая изоляция ноу-хау и ТГц фотоники)</p>
+          <div class="mt-3 pt-2.5 border-t border-slate-700/60 flex items-center justify-between text-[11px]">
+            <span class="text-slate-400">Статус защиты:</span>
+            <span class="text-emerald-400 font-semibold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Изолирован</span>
+          </div>
+        </div>
+
+        <!-- TILE 2: SECRET LEAK SHIELD -->
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-slate-700/70 shadow-sm relative overflow-hidden group">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-2">
+            <span class="font-medium text-slate-300">Secret Leak Shield</span>
+            <span class="p-1 rounded-md bg-emerald-500/10 text-emerald-400"><i data-lucide="key" class="w-4 h-4"></i></span>
+          </div>
+          <div class="text-xl font-bold text-emerald-400" id="sec-shield-status">0 утечек</div>
+          <p class="text-[11px] text-slate-400 mt-1">Сканирование API-токенов, приватных RSA-ключей и .env</p>
+          <div class="mt-3 pt-2.5 border-t border-slate-700/60 flex items-center justify-between text-[11px]">
+            <span class="text-slate-400">Pre-commit Hook:</span>
+            <span class="text-emerald-400 font-semibold">Активен</span>
+          </div>
+        </div>
+
+        <!-- TILE 3: REMOTE SAFEGUARD -->
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-slate-700/70 shadow-sm relative overflow-hidden group">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-2">
+            <span class="font-medium text-slate-300">Remote Safeguard</span>
+            <span class="p-1 rounded-md bg-blue-500/10 text-blue-400"><i data-lucide="git-branch" class="w-4 h-4"></i></span>
+          </div>
+          <div class="text-xl font-bold text-blue-400">SSH Aliasing</div>
+          <p class="text-[11px] text-slate-400 mt-1">github-personal vs github-tydex (includeIf gitdir)</p>
+          <div class="mt-3 pt-2.5 border-t border-slate-700/60 flex items-center justify-between text-[11px]">
+            <span class="text-slate-400">Перекрестный пуш:</span>
+            <span class="text-emerald-400 font-semibold">Заблокирован</span>
+          </div>
+        </div>
+
+        <!-- TILE 4: AIR-GAP GUARDRAIL -->
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-slate-700/70 shadow-sm relative overflow-hidden group">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-2">
+            <span class="font-medium text-slate-300">Air-Gap Guardrail</span>
+            <span class="p-1 rounded-md bg-purple-500/10 text-purple-400"><i data-lucide="database" class="w-4 h-4"></i></span>
+          </div>
+          <div class="text-xl font-bold text-purple-400">Контекстный барьер</div>
+          <p class="text-[11px] text-slate-400 mt-1">Запрет агентам читать артефакты Тидекс в открытых сессиях</p>
+          <div class="mt-3 pt-2.5 border-t border-slate-700/60 flex items-center justify-between text-[11px]">
+            <span class="text-slate-400">Среда окружения:</span>
+            <span class="text-emerald-400 font-semibold">Защищена</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PROJECTS REGISTRY TABLE -->
+      <div class="bg-[#1e293b] rounded-2xl border border-slate-700/80 shadow-md overflow-hidden">
+        <div class="p-4 border-b border-slate-700/80 flex items-center justify-between">
+          <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+            <i data-lucide="folders" class="w-4 h-4 text-blue-400"></i>
+            <span>Реестр контролируемых проектов и репозиториев (2 GitHub Аккаунта)</span>
+          </h3>
+          <span class="text-xs text-slate-400" id="sec-last-checked">Проверено: только что</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-900/60 text-slate-400 uppercase tracking-wider text-[10px] border-b border-slate-700">
+              <tr>
+                <th class="p-3">Проект</th>
+                <th class="p-3">Аккаунт / Владелец</th>
+                <th class="p-3">Уровень допуска</th>
+                <th class="p-3">Каталог на сервере</th>
+                <th class="p-3">Git Remote / Origin</th>
+                <th class="p-3">Статус аудита</th>
+                <th class="p-3 text-right">Действие</th>
+              </tr>
+            </thead>
+            <tbody id="security-projects-table-body" class="divide-y divide-slate-700/60">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AUDIT LOG TERMINAL (ОКНО ТЕРМИНАЛА АУДИТА) -->
+      <div class="bg-[#1e293b] rounded-2xl border border-slate-700/80 shadow-md p-4 space-y-2">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-white flex items-center space-x-2">
+            <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i>
+            <span>Консоль отчета аудита безопасности (Audit Log)</span>
+          </h3>
+          <span id="audit-elapsed-badge" class="text-[11px] text-slate-400">Ожидание запуска</span>
+        </div>
+        <pre id="audit-terminal-output" class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-[11px] font-mono text-emerald-400/90 overflow-x-auto max-h-60 leading-relaxed">🛡️ Security Shield готов к работе. Нажмите «Запустить аудит безопасности» для проверки репозиториев.</pre>
+      </div>
+
+    </section>
+
   </main>
 
 
@@ -554,7 +694,8 @@
         loadProjects(),
         loadTasks(),
         loadReminders(),
-        loadDocuments()
+        loadDocuments(),
+        loadSecurityOverview(),
       ]);
       lucide.createIcons();
     }
@@ -577,6 +718,9 @@
 
       if (tab === 'editor' && allDocuments.length > 0 && !currentDocId) {
         selectDocument(allDocuments[0].id);
+      }
+      if (tab === 'security') {
+        loadSecurityOverview();
       }
       lucide.createIcons();
     }
@@ -1054,6 +1198,119 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    // --- SECURITY HUB & TILES ---
+    async function loadSecurityOverview() {
+      try {
+        const res = await fetch(`${API_BASE}/security/overview`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // Update Top Badge
+        const topBadge = document.getElementById('top-security-label');
+        if (topBadge) {
+          if (data.total_violations === 0) {
+            topBadge.innerText = 'Щит: Чисто';
+            topBadge.className = 'text-emerald-400 font-medium';
+          } else {
+            topBadge.innerText = `Щит: ${data.total_violations} риск(ов)`;
+            topBadge.className = 'text-rose-400 font-medium';
+          }
+        }
+
+        // Update Tiles
+        const secShield = document.getElementById('sec-shield-status');
+        if (secShield) {
+          secShield.innerText = data.total_violations === 0 ? '0 утечек' : `${data.total_violations} найдено!`;
+          secShield.className = data.total_violations === 0 ? 'text-xl font-bold text-emerald-400' : 'text-xl font-bold text-rose-400';
+        }
+
+        const secLastChecked = document.getElementById('sec-last-checked');
+        if (secLastChecked && data.last_checked) {
+          secLastChecked.innerText = `Проверено: ${data.last_checked}`;
+        }
+
+        // Render Table
+        const tbody = document.getElementById('security-projects-table-body');
+        if (tbody && data.projects) {
+          tbody.innerHTML = data.projects.map(p => {
+            const statusBadge = p.violations_count === 0 
+              ? `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Clean</span>`
+              : `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30">${p.violations_count} alert</span>`;
+
+            return `
+              <tr class="hover:bg-slate-800/40 transition">
+                <td class="p-3 font-medium text-white">${escapeHtml(p.name)}</td>
+                <td class="p-3 text-slate-300">${escapeHtml(p.account)}</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-200 border border-slate-700">${escapeHtml(p.clearance_label)}</span></td>
+                <td class="p-3 font-mono text-[11px] text-slate-400">${escapeHtml(p.path)}</td>
+                <td class="p-3 font-mono text-[11px] text-slate-400 truncate max-w-xs" title="${escapeHtml(p.origin_url)}">${escapeHtml(p.origin_url || 'None')}</td>
+                <td class="p-3">${statusBadge}</td>
+                <td class="p-3 text-right">
+                  <button onclick="runSecurityAudit('${p.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white rounded text-[11px] font-medium transition">
+                    Аудит
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+        lucide.createIcons();
+      } catch (e) {
+        console.error("Failed to load security overview:", e);
+      }
+    }
+
+    async function runSecurityAudit(projectId = null) {
+      const term = document.getElementById('audit-terminal-output');
+      const badge = document.getElementById('audit-elapsed-badge');
+      const btn = document.getElementById('btn-run-audit');
+
+      if (btn) btn.disabled = true;
+      if (term) term.innerText = `[${new Date().toLocaleTimeString()}] 🚀 Запуск Security Shield сканера ${projectId ? `для '${projectId}'` : 'для всех репозиториев'}...`;
+      if (badge) badge.innerText = 'Аудит выполняется...';
+
+      try {
+        const res = await fetch(`${API_BASE}/security/audit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ project_id: projectId })
+        });
+        const data = await res.json();
+
+        let logOutput = `======================================================================\n`;
+        logOutput += `🛡️ РЕЗУЛЬТАТЫ СКАНИРОВАНИЯ БЕЗОПАСНОСТИ (Время: ${data.elapsed_ms} мс)\n`;
+        logOutput += `Статус: ${data.status.toUpperCase()} | Проверено репозиториев: ${data.audited_count}\n`;
+        logOutput += `======================================================================\n\n`;
+
+        for (const item of data.results) {
+          logOutput += `🔹 [${item.project_name}] (${item.clearance_label})\n`;
+          logOutput += `   • Каталог: ${item.data.exists ? 'Существует' : 'Изолирован / Air-gap активен'}\n`;
+          logOutput += `   • Git Remote: ${item.data.origin_url}\n`;
+          logOutput += `   • Автор Git: ${item.data.author_email}\n`;
+          logOutput += `   • Просканировано файлов: ${item.data.scanned_files}\n`;
+
+          if (item.data.violations && item.data.violations.length > 0) {
+            logOutput += `   ❌ ОБНАРУЖЕНЫ УГРОЗЫ БЕЗОПАСНОСТИ:\n`;
+            for (const v of item.data.violations) {
+              logOutput += `      🚨 ${v}\n`;
+            }
+          } else {
+            logOutput += `   ✅ Утечек секретов или нарушений политик не обнаружено.\n`;
+          }
+          logOutput += `\n`;
+        }
+
+        if (term) term.innerText = logOutput;
+        if (badge) badge.innerText = `Завершено за ${data.elapsed_ms} мс`;
+        await loadSecurityOverview();
+      } catch (e) {
+        if (term) term.innerText += `\n❌ Ошибка запуска аудита: ${e}`;
+        if (badge) badge.innerText = 'Ошибка';
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
   </script>
 </body>
