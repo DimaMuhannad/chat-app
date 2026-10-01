@@ -38,7 +38,7 @@ if pid == 0:
     os.close(slave)
     os.environ['TERM'] = 'xterm-256color'
     os.environ['NODE_OPTIONS'] = '--max-old-space-size=1536'
-    os.execlp('claude', 'claude', 'setup-token')
+    os.execlp('claude', 'claude', 'auth', 'login')
 
 os.close(slave)
 
@@ -122,7 +122,7 @@ while time.time() - res_start < 30:
                 break
             result_output += chunk
             clean_res = (raw_output + result_output).decode('utf-8', errors='ignore')
-            if 'sk-ant-oat01' in clean_res or 'Token' in clean_res or 'error' in clean_res.lower():
+            if any(k in clean_res.lower() for k in ['logged in', 'success', 'token', 'welcome', 'error']):
                 time.sleep(1)
                 break
         except Exception:
