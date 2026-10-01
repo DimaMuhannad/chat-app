@@ -1,0 +1,12 @@
+# Конфигурация scripts/agy_task.sh. Скопируйте в .agy/config (файл не коммитится).
+# Без .agy/config скрипт не запускается — это намеренно (fail-closed).
+
+# Закрытые NDA-пространства: их содержимое не отправляется во внешнюю LLM (air-gap).
+# Можно указать несколько строк. Проверяются и вложенные пути.
+restricted_path=/opt/work-company-nda
+
+# Подстроки remote-адреса, при совпадении с которыми запуск запрещён.
+restricted_remote=github.com/company-nda-org
+
+# Модель Antigravity по умолчанию (список: agy models).
+default_model=gemini-3.8-flash-high

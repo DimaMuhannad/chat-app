@@ -47,4 +47,8 @@ logs/
 uploads/
 .gemini/
 
-.claude/
+.claude/*
+!.claude/skills/
+
+.agy/*
+!.agy/config.example
