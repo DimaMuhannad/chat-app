@@ -25,6 +25,25 @@ if [ -z "$ANTHROPIC_API_KEY" ]; then
     fi
 fi
 
+# Load CLAUDE_CODE_OAUTH_TOKEN from .env if present and not already set
+if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+    if [ -f "/opt/assistant-core/.env" ]; then
+        TOKEN_VAL=$(grep -E "^CLAUDE_CODE_OAUTH_TOKEN=" /opt/assistant-core/.env 2>/dev/null | cut -d '=' -f2- | tr -d '"' | tr -d "'" || true)
+        if [ -n "$TOKEN_VAL" ]; then
+            export CLAUDE_CODE_OAUTH_TOKEN="$TOKEN_VAL"
+        fi
+    fi
+fi
+
+if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+    if [ -f "/opt/chat-app/.env" ]; then
+        TOKEN_VAL=$(grep -E "^CLAUDE_CODE_OAUTH_TOKEN=" /opt/chat-app/.env 2>/dev/null | cut -d '=' -f2- | tr -d '"' | tr -d "'" || true)
+        if [ -n "$TOKEN_VAL" ]; then
+            export CLAUDE_CODE_OAUTH_TOKEN="$TOKEN_VAL"
+        fi
+    fi
+fi
+
 case "$1" in
     status)
         echo "🔍 Проверка статуса авторизации Claude Code CLI..."
