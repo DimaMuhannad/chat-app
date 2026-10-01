@@ -10,6 +10,7 @@ JOBS_DIR="${AGY_JOBS_DIR:-/var/tmp/agy-jobs}"
 USAGE_LOG="$JOBS_DIR/usage.jsonl"
 AGY_BIN="${AGY_BIN:-/root/.local/bin/agy}"
 AGY_HOME="${AGY_HOME:-/root/.gemini/antigravity-cli}"
+AGENTS_SRC="${AGY_AGENTS_SRC:-$(cd "$(dirname "$0")/.." && pwd)/.agents/agents}"
 
 SECRET_RE='-----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{50,}|AIzaSy[A-Za-z0-9_-]{33}|AQ\.Ab[A-Za-z0-9_-]{20,}|sk-ant-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{32,}|ntn_[A-Za-z0-9]{40,}|secret_[A-Za-z0-9]{40,}|\b[0-9]{8,10}:[A-Za-z0-9_-]{35}\b'
 FORBIDDEN_FIND=( -name '.env' -o -name '.env.*' -o -name 'credentials.json' -o -name 'token.json'
@@ -21,7 +22,7 @@ die() { echo "agy_task: $*" >&2; exit 1; }
 usage() {
   cat <<'EOF'
 Использование:
-  agy_task.sh run --repo PATH [--mode read|edit] [--model ID] [--timeout SEC]
+  agy_task.sh run --repo PATH [--mode read|edit] [--agent NAME|none] [--model ID] [--timeout SEC]
                   [--max-chars N] [--task-file FILE | задача через stdin] [--keep]
   agy_task.sh diff JOB_ID     — сводка и путь к патчу правок агента
   agy_task.sh clean JOB_ID|--all
@@ -31,6 +32,13 @@ usage() {
   read  (по умолчанию) — агент только читает; любые его правки отбрасываются.
   edit  — агент правит изолированную копию; патч сохраняется в задании,
           в настоящий репозиторий его переносит проверяющий (git apply).
+
+Агенты (.agents/agents/<имя>/agent.md, без наследования GEMINI.md):
+  reader        — чтение, инвентаризация, сводки (по умолчанию для read)
+  gsd-executor  — механический шаг плана GSD (по умолчанию для edit)
+  test-writer   — шаблонный код и pytest-тесты по образцу проекта
+  docs          — документация и перевод
+  none          — без профиля (подгружаются правила репозитория, ~2 раза дороже)
 EOF
 }
 
@@ -100,7 +108,8 @@ PY
 }
 
 run_agent() {
-  local ws="$1" prompt="$2" model="$3" timeout="$4" agent_mode="$5" out="$6"
+  local ws="$1" prompt="$2" model="$3" timeout="$4" agent_mode="$5" out="$6" agent="${7:-}"
+  local agent_args=(); [ -n "$agent" ] && agent_args=(--agent "$agent")
   systemd-run --pipe --wait --collect --quiet \
     -p "WorkingDirectory=$ws" \
     -p "TemporaryFileSystem=/opt /root /home /srv /mnt /media /var/lib /var/log /var/tmp /var/backups /var/mail /var/spool" \
@@ -111,15 +120,16 @@ run_agent() {
     -p "ProtectProc=invisible" -p "ProcSubset=pid" -p "NoNewPrivileges=yes" \
     -p "MemoryMax=1G" -p "RuntimeMaxSec=$((timeout + 30))" \
     -p "Environment=HOME=/root" -p "Environment=PATH=/usr/local/bin:/usr/bin:/bin" \
-    "$AGY_BIN" -p "$prompt" --model "$model" --mode "$agent_mode" \
+    "$AGY_BIN" -p "$prompt" --model "$model" --mode "$agent_mode" "${agent_args[@]}" \
       --output-format json --print-timeout "${timeout}s" > "$out" 2>"$out.stderr" || true
 }
 
 cmd_run() {
-  local repo="" mode="read" model="" timeout=600 max_chars=6000 task_file="" keep=0
+  local repo="" mode="read" model="" timeout=600 max_chars=6000 task_file="" keep=0 agent=""
   while [ $# -gt 0 ]; do
     case "$1" in
       --repo) repo="$2"; shift 2 ;;
+      --agent) agent="$2"; shift 2 ;;
       --mode) mode="$2"; shift 2 ;;
       --model) model="$2"; shift 2 ;;
       --timeout) timeout="$2"; shift 2 ;;
@@ -133,6 +143,11 @@ cmd_run() {
   [ -n "$repo" ] || die "нужен --repo"
   load_config
   model="${model:-$DEFAULT_MODEL}"
+  if [ -z "$agent" ]; then
+    if [ "$mode" = read ]; then agent=reader; else agent=gsd-executor; fi
+  elif [ "$agent" = none ]; then
+    agent=""
+  fi
 
   local task
   if [ -n "$task_file" ]; then task="$(cat "$task_file")"; else task="$(cat)"; fi
@@ -168,6 +183,13 @@ cmd_run() {
     cmd_clean "$id" >/dev/null; exit 4
   fi
 
+  if [ -n "$agent" ]; then
+    local agent_src="$AGENTS_SRC/$agent/agent.md"
+    [ -f "$agent_src" ] || { cmd_clean "$id" >/dev/null; die "нет профиля агента $agent_src"; }
+    mkdir -p "$ws/.agents/agents/$agent"
+    cp "$agent_src" "$ws/.agents/agents/$agent/agent.md"
+  fi
+
   git -C "$ws" add -A
   git -C "$ws" -c user.name=agy-baseline -c user.email=agy@localhost commit -q --allow-empty -m "agy baseline"
   echo "baseline=$(git -C "$ws" rev-parse HEAD)" >> "$job/meta"
@@ -192,10 +214,10 @@ $task"
 
   local agent_mode=plan; [ "$mode" = edit ] && agent_mode=accept-edits
   local start; start=$(date +%s)
-  run_agent "$ws" "$prompt" "$model" "$timeout" "$agent_mode" "$job/result.json"
+  run_agent "$ws" "$prompt" "$model" "$timeout" "$agent_mode" "$job/result.json" "$agent"
   if ! python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if d.get("response","").strip() else 1)' "$job/result.json" 2>/dev/null; then
     echo "предупреждение: пустой ответ, повтор…" >&2
-    run_agent "$ws" "$prompt" "$model" "$timeout" "$agent_mode" "$job/result.json"
+    run_agent "$ws" "$prompt" "$model" "$timeout" "$agent_mode" "$job/result.json" "$agent"
   fi
 
   git -C "$ws" add -A -N . 2>/dev/null || true
