@@ -1,0 +1,13 @@
+docs:
+  - path: docs/UNIVERSAL_ARCHITECTURE_BLUEPRINT.md
+    type: SPEC
+    precedence: 0
+  - path: docs/MULTI_PROJECT_ORCHESTRATION_AND_SECURITY.md
+    type: SPEC
+    precedence: 1
+  - path: docs/USER_PROFILE.md
+    type: DOC
+    precedence: 2
+  - path: docs/TYDEX_COMPANY_PROFILE.md
+    type: DOC
+    precedence: 3

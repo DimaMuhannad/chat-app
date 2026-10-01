@@ -1,0 +1,12 @@
+{
+  "source_path": "/opt/chat-app/docs/TYDEX_COMPANY_PROFILE.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Контекстный профиль: Компания «Тидекс»",
+  "summary": "Company reference documentation for Tydex LLC covering optical technologies, THz photonics, and instrumentation sector operations.",
+  "scope": ["Tydex LLC", "optical instruments", "THz photonics", "spectroscopy", "instrumentation", "software development"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": 3
+}

@@ -1,0 +1,25 @@
+{
+  "source_path": "/opt/chat-app/docs/UNIVERSAL_ARCHITECTURE_BLUEPRINT.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Universal Architecture Blueprint — Antigravity Studio & Assistant Core",
+  "summary": "Technical specification for platform universalization defining architecture layers, port protocols, SQLite schemas, 6-phase migration roadmap with HITL safety and Zero-Trust least-privilege.",
+  "scope": [
+    "Universal Architecture",
+    "Antigravity Studio",
+    "Assistant Core",
+    "Platform generalization",
+    "Clean Architecture",
+    "Persona plugins",
+    "HITL (Human-in-the-Loop)",
+    "Zero-Trust least-privilege",
+    "Domain events",
+    "EventBus",
+    "Connectors",
+    "Migration roadmap"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": 0
+}

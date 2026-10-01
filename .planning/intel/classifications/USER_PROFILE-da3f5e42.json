@@ -1,0 +1,12 @@
+{
+  "source_path": "/opt/chat-app/docs/USER_PROFILE.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Профиль пользователя: Дмитрий Александрович Попов",
+  "summary": "User profile documenting roles, affiliations, workload norms at GUAP university and Tydex company.",
+  "scope": ["user profile", "GUAP", "physics department", "Tydex", "work scheduling", "communications"],
+  "cross_refs": ["docs/TYDEX_COMPANY_PROFILE.md"],
+  "locked": false,
+  "precedence": 2
+}

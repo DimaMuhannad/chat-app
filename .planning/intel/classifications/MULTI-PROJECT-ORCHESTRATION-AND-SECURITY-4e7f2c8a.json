@@ -1,0 +1,27 @@
+{
+  "source_path": "/opt/chat-app/docs/MULTI_PROJECT_ORCHESTRATION_AND_SECURITY.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Архитектурная спецификация: Оркестрация мультирепозиторной разработки GitHub (2 аккаунта), единые стандарты и политики безопасности проектов",
+  "summary": "Multi-account GitHub orchestration specification with unified development standards, Notion management, and NDA security policies.",
+  "scope": [
+    "GitHub account orchestration",
+    "SSH configuration",
+    "Git workflow standardization",
+    "Notion project management",
+    "security scanning",
+    "Security Tile",
+    "NDA air-gap protection",
+    "secret management"
+  ],
+  "cross_refs": [
+    "GEMINI.md",
+    "AGENTS.md",
+    "scripts/notion_dev.py",
+    "scripts/security_shield.py",
+    "docs/UNIVERSAL_ARCHITECTURE_BLUEPRINT.md"
+  ],
+  "locked": false,
+  "precedence": 1
+}

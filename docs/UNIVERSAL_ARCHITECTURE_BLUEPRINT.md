@@ -216,7 +216,24 @@ persona:
   telegram:
     authorized_user_ids: ["${TELEGRAM_USER_ID}"]
 
+  # Пути — данные, обязательной раскладки каталогов нет (решение W6).
+  # Все 4 записи = текущий PROJECTS_REGISTRY 1:1 (решение W2).
+  # git: аккаунт/хост/SSH-профиль — необязательные данные (решение W1).
   workspaces:
+    - id: "chat-app"
+      label: "Antigravity Web Studio (chat-app)"
+      clearance: public
+      path: "/opt/chat-app"
+      color: "blue"
+      git: { host: "github.com", account: "DimaMuhannad", ssh_alias: null }
+      notion_project: null
+    - id: "assistant-core"
+      label: "Assistant Core Daemon"
+      clearance: public
+      path: "/opt/assistant-core"
+      color: "green"
+      git: { host: "github.com", account: "DimaMuhannad", ssh_alias: null }
+      notion_project: null
     - id: "guap-physics"
       label: "Кафедра физики ГУАП"
       clearance: internal
@@ -232,18 +249,30 @@ persona:
       forbidden_remote_substrings: ["github.com/DimaMuhannad"]
       forbidden_keywords: ["tydex_internal_secret", "golay_calibration_key", "thz_proprietary_firmware"]
 
+  # Роли разделены, на роль допускается несколько привязок (решение W8).
   connectors:
-    schedule:
-      provider: "guap_lms"
-      scopes: ["schedule.read"]
-      config: { base_url: "https://pro.guap.ru" }
+    schedule_source:
+      - provider: "guap_rasp_parser"      # ScheduleParser, сайт расписания вуза
+        scopes: ["schedule.read"]
+        config: { base_url: "https://rasp.guap.ru/" }
+    calendar_sync:
+      - provider: "google_calendar"       # приёмник, не источник
+        scopes: ["calendar.write"]
     timesheet:
-      provider: "aadhk"
-      scopes: ["timesheet.read", "timesheet.write"]
-      config: { daily_norm_hours: 8.5, default_project: "Тидекс" }
+      - provider: "aadhk"
+        scopes: ["timesheet.read", "timesheet.write"]
+        config: { daily_norm_hours: 8.5, default_project: "Тидекс" }
     lms:
-      provider: "guap_lms"
-      scopes: ["lms.read", "lms.grade"]
+      - provider: "guap_lms"              # GuapLmsClient, личный кабинет
+        scopes: ["lms.read", "lms.grade"]
+        config: { base_url: "https://pro.guap.ru" }
+    git_source:                           # решение W1: прогресс проектов по коммитам, по SSH
+      - provider: "ssh_git"
+        scopes: ["git.read"]
+    notion:                               # решение W7: дашборды проектов — функция платформы
+      - provider: "notion"
+        scopes: ["notion.read", "notion.write"]
+        config: { projects: [] }          # список проектов задаётся в персоне
 
   prompts:
     secretary_system_prompt: "prompts/secretary_default.jinja2"
@@ -279,7 +308,8 @@ CREATE TABLE workspaces (
 CREATE TABLE connector_bindings (
   id TEXT PRIMARY KEY,
   persona_id TEXT NOT NULL REFERENCES personas(id),
-  role TEXT NOT NULL,             -- 'schedule' | 'timesheet' | 'lms'
+  role TEXT NOT NULL,             -- 'schedule_source' | 'calendar_sync' | 'timesheet' | 'lms' | 'git_source' | 'notion'
+                                  -- несколько строк на одну роль допустимы (решение W8)
   provider TEXT NOT NULL,
   scopes TEXT NOT NULL,           -- JSON array
   config_json TEXT NOT NULL
@@ -304,8 +334,8 @@ CREATE TABLE pending_confirmations (   -- backing store для requires_confirma
 |---|---|---|---|
 | **0. Страховочная сеть** (1–2 нед.) | `import-linter`-контракт (domain не импортирует adapters); зафиксировать текущий pytest как baseline; каркас "второй синтетической персоны" (пока с заглушками) | Низкий | CI зелёный; baseline задокументирован |
 | **1. Извлечение портов без изменения поведения** (2–3 нед.) | `core/ports/*`; существующие классы (`GuapLmsClient`, `AadhkIngestionService`, `GoogleCalendarClient`) делаются совместимыми с протоколами; inline-импорты в `secretary_dialog.py`/`bot_handler.py` → конструкторная инъекция (по образцу уже существующего `MethodistService`) | Средний — возможны несовместимые сигнатуры, нужны adapter-wrapper'ы | 100% текущих тестов проходят без изменения фикстур; `Protocol`-проверка подтверждает соответствие |
-| **2. `persona.yaml` + SQLite-схема персон** (2 нед.) | Таблицы из §3.2; `PROJECTS_REGISTRY` и хардкод-дефолты `'ГУАП'`/`'Тидекс'` → данные; промпты → Jinja2-шаблоны | Средний-высокий — промпты напрямую влияют на поведение LLM, нужен golden-набор ответов до рефакторинга | `PROJECTS_REGISTRY` удалён как код; новый `test_persona_config.py` подтверждает, что вторая синтетическая персона даёт отличные от дефолтной промпты/scope-решения; 100% pytest |
-| **3. Event Bus + развязка межрепозиторийной БД** (3–4 нед.) | Внутренняя шина событий; chat-app перестаёт напрямую открывать `/opt/assistant-core/data/assistant.db`; `SECRET_PATTERNS`/`FORBIDDEN_FILES`/`run_cmd()` → общий пакет (убирает дрейф `security_shield.py` vs `security.py`) | **Самый высокий в плане** — единственная фаза, трогающая границу процессов в проде; нужен staged rollout и двойная запись в переходный период | `pytest backend/tests` проходит против свежей пустой БД без доступа к `/opt/assistant-core`; одна security-реализация, импортируемая из обоих мест |
+| **2. `persona.yaml` + SQLite-схема персон** (2 нед.) | Пререквизит: снимок текста всех системных промптов (решение W10). Таблицы из §3.2; `PROJECTS_REGISTRY` (все 4 записи) и хардкод-дефолты `'ГУАП'`/`'Тидекс'` → данные; NDA-правила → данные workspace (решение W3); промпты → Jinja2-шаблоны | Средний-высокий — промпты напрямую влияют на поведение LLM; закрывается снимком промптов | `PROJECTS_REGISTRY` удалён как код; снимок-тест: шаблон с персоной по умолчанию даёт промпт, идентичный сохранённому символ в символ; тест эквивалентности NDA-проверок; новый `test_persona_config.py` подтверждает, что вторая синтетическая персона даёт отличные от дефолтной промпты/scope-решения; 100% pytest |
+| **3. Владелец схемы БД + общая security-библиотека** (2–3 нед.) | Решение W9: одна общая SQLite-база, но схема и миграции — в общей библиотеке; путь к базе — из настроек (убрать хардкод `SQLITE_DB_PATH`); режим WAL; межпроцессная шина не нужна. Решение W5: `SECRET_PATTERNS`/`FORBIDDEN_FILES`/`run_cmd()` + NDA-правила → одна библиотека, `security_shield.py` — тонкая обёртка; установка как pre-commit hook | Средний (был «самый высокий»: отказ от разделения БД и двойной записи снял основной риск) | `pytest backend/tests` проходит против свежей пустой временной БД без доступа к `/opt/assistant-core`; одна security-реализация, импортируемая из обоих мест |
 | **4. Zero-Trust HITL унификация** (2 нед.) | `@requires_confirmation` + `pending_confirmations`; Telegram-flow переводится на примитив без изменения UX; тот же примитив добавляется на `DELETE /api/v1/projects/{id}`, `documents/{id}` в chat-app | Средний — важно сохранить Telegram UX 1:1 | `test_hitl_safety_guardrails.py`/`test_bot_group_isolation.py` без изменения ассертов; новый `test_web_hitl_guardrails.py`: прямой HTTP DELETE без токена → 409, не 200 |
 | **5. Готовность к мультитенантности** (2–3 нед.) | Убрать мутацию глобального `config.GEMINI_API_KEY` в `key_rotator.py`; `WorkspaceScope`-enum для NDA air-gap внутри assistant-core (не только в chat-app, см. Риск №4 аудита) | Средний — тонкие concurrency-баги при удалении глобального стейта | Интеграционный тест инстанцирует 2 персоны одновременно, подтверждает отсутствие cross-talk; 100% прочих тестов |
 
@@ -340,8 +370,14 @@ CREATE TABLE pending_confirmations (   -- backing store для requires_confirma
 
 ---
 
-## 7. Открытые вопросы, требующие решения пользователя
+## 7. Решения пользователя и оставшиеся вопросы
 
-1. **Фаза 3 (развязка БД)** — выбор между (a) чистым разделением на две БД с синхронизацией через события или (b) read-only репликой на переходный период. Это решение меняет операционную модель systemd-сервисов и нуждается в отдельном обсуждении перед планированием.
-2. **Промпт-шаблонизация (Фаза 2)** — нужен ли golden-набор эталонных ответов LLM до переноса промптов в Jinja2, чтобы гарантировать отсутствие дрифта поведения.
-3. Автоматическая адверсариальная верификация (`Workflow`) недоступна в этой сессии — раздел 6 выше прошёл только ручную точечную проверку. Если нужна полная multi-vote верификация перед тем, как эта карта соответствий станет основанием для технических решений, стоит перезапустить её в сессии, где `Workflow` снова доступен.
+Решено 2026-10-01 (подробно: `.planning/intel/user-resolutions.md`):
+1. **Фаза 3 (БД)** — одна общая база с явным владельцем схемы, миграциями, путём из настроек и WAL (не две БД и не read-only реплика).
+2. **Фаза 2 (промпты)** — снимок промптов с побайтовым сравнением; golden-набор ответов LLM не нужен.
+3. **Git-источники** — любое число репозиториев в разных git-сервисах, подключение по SSH; секретарь по коммитам оценивает прогресс проектов и обновляет дашборды Notion. Требует нового порта `git_source` и коннектора `notion`.
+4. **Роли расписания** — `schedule_source` (парсер сайта вуза), `calendar_sync` (Google Calendar как приёмник), `lms` — раздельно, несколько привязок на роль.
+5. **Workspace по умолчанию** — все 4 текущих проекта; пути — данные.
+
+Остаётся открытым:
+- Автоматическая адверсариальная верификация (`Workflow`) недоступна в этой сессии — раздел 6 выше прошёл только ручную точечную проверку. Если нужна полная multi-vote верификация перед тем, как эта карта соответствий станет основанием для технических решений, стоит перезапустить её в сессии, где `Workflow` снова доступен.
