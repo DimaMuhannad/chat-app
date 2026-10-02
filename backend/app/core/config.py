@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     # Storage & Paths
     SQLITE_DB_PATH: str = "/opt/assistant-core/data/assistant.db"
     WORKSPACE_ROOT: str = "/opt/chat-app"
+
+    # Персона, читаемая из таблиц общей БД (YAML читает только assistant-core)
+    PERSONA_ID: str = "popov-da-default"
     
     model_config = SettingsConfigDict(
         env_file=".env",

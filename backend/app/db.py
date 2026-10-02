@@ -17,6 +17,27 @@ async def get_db() -> AsyncGenerator[aiosqlite.Connection, None]:
 
 class DatabaseService:
     @staticmethod
+    async def get_persona(persona_id: str) -> dict[str, Any] | None:
+        """Персона из таблицы personas; None, если строки или самой таблицы нет."""
+        try:
+            async with get_db() as conn:
+                cursor = await conn.execute(
+                    "SELECT id, display_name, config_json, updated_at FROM personas WHERE id = ?;",
+                    (persona_id,),
+                )
+                row = await cursor.fetchone()
+        except aiosqlite.OperationalError:
+            return None
+        if row is None:
+            return None
+        return {
+            "id": row["id"],
+            "display_name": row["display_name"],
+            "config": json.loads(row["config_json"]),
+            "updated_at": row["updated_at"],
+        }
+
+    @staticmethod
     async def get_dashboard_summary() -> dict[str, Any]:
         async with get_db() as conn:
             # 1. Focus P1 tasks
