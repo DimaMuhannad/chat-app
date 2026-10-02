@@ -1,18 +1,18 @@
 ---
 gsd_state_version: "1.0"
 current_phase: 01
-current_phase_name: strahovochnaya-set-i-karkas
+current_phase_name: Страховочная сеть и каркас
 status: executing
-stopped_at: Phase 1 context gathered
-last_updated: "2026-10-01T22:43:34.707Z"
-last_activity: 2026-10-01
-last_activity_desc: "Создан roadmap: 7 фаз, 42 требования v1, покрытие 42/42"
-state_head: 3263feb587a69af0de6ee827519d0fbb96f00b05
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-10-02T05:02:03.653Z"
+last_activity: 2026-10-02
+last_activity_desc: Phase 01 execution started
+state_head: 67291a8d3b0faba5ee09e513cecfb5ad1b29ab67
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 4
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-01)
 
 **Core value:** Профиль владельца целиком живёт в данных, а платформа работает для любой персоны — без регрессии поведения и без ослабления HITL и air-gap NDA.
-**Current focus:** Phase 1 — Страховочная сеть и каркас
+**Current focus:** Phase 01 — Страховочная сеть и каркас
 
 ## Current Position
 
-Phase: 01 (strahovochnaya-set-i-karkas) — READY TO EXECUTE
-Plan: 0 of TBD in current phase
+Phase: 01 (Страховочная сеть и каркас) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-10-01 — Создан roadmap: 7 фаз, 42 требования v1, покрытие 42/42
+Last activity: 2026-10-02 — Phase 01 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -64,6 +64,11 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 *Updated after each plan completion*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 01 P01-01 | 30 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -77,6 +82,8 @@ Progress: [░░░░░░░░░░] 0%
 - [Нумерация, 2026-10-01]: фазы 1–7 (было 0–6) — GSD резервирует номер 0; старая Фаза N = новая Фаза N+1.
 - [Владелец W10]: снимок промптов — пререквизит Фазы 3.
 - [Roadmapper, ждёт подтверждения]: Phase 7 после Phase 6; «CI» = локальный гейт; HITL на все DELETE chat-app.
+- [Phase 01]: Гейт не переопределяет БД для assistant-core (load_dotenv override=True); защита обоих репозиториев - контроль SHA-256 боевой assistant.db до/после, chat-app идёт на копии
+- [Phase 01]: Владелец разрешил локальные коммиты прямо в main /opt/assistant-core на всю Фазу 1 (без push, без .planning/ в том репозитории)
 
 ### Pending Todos
 
@@ -103,6 +110,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-01T19:42:30.619Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-strahovochnaya-set-i-karkas/01-CONTEXT.md
+Last session: 2026-10-02T05:02:03.542Z
+Stopped at: Completed 01-01-PLAN.md
+Resume file: None
