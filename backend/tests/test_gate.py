@@ -151,3 +151,31 @@ def test_lint_imports_step_missing_binary_is_red_without_exception(tmp_path):
     )
     assert result.ok is False
     assert "requirements-dev.txt" in result.detail
+
+
+def test_persona_drift_check_identical_copies_is_green(tmp_path):
+    a = tmp_path / "a.py"
+    b = tmp_path / "b.py"
+    a.write_bytes(b"SYNTHETIC_PERSONA = {}\n")
+    b.write_bytes(b"SYNTHETIC_PERSONA = {}\n")
+    result = gate.persona_drift_check(a, b)
+    assert result.ok is True
+    assert result.name == "синтетическая персона (дрейф SHA-256)"
+
+
+def test_persona_drift_check_different_copies_is_red(tmp_path):
+    a = tmp_path / "a.py"
+    b = tmp_path / "b.py"
+    a.write_bytes(b"SYNTHETIC_PERSONA = {}\n")
+    b.write_bytes(b"SYNTHETIC_PERSONA = {'x': 1}\n")
+    result = gate.persona_drift_check(a, b)
+    assert result.ok is False
+    assert "синхронизируйте" in result.detail
+
+
+def test_persona_drift_check_missing_file_is_red_without_exception(tmp_path):
+    a = tmp_path / "a.py"
+    a.write_bytes(b"x")
+    result = gate.persona_drift_check(a, tmp_path / "нет.py")
+    assert result.ok is False
+    assert "нет файла" in result.detail

@@ -10,8 +10,9 @@
   3. запускает pytest chat-app ТОЛЬКО с SQLITE_DB_PATH на эту копию;
   4. запускает pytest assistant-core (переопределить БД окружением нельзя:
      src/config.py вызывает load_dotenv(..., override=True) - защита это хеш);
-  5. считает SHA-256 боевой БД («после») и красит итог при любом расхождении;
-  6. печатает по-русски таблицу «репозиторий × проверка -> ✓/✗» и итог.
+  5. сравнивает две копии synthetic_persona.py по SHA-256 (дрейф краснит итог);
+  6. считает SHA-256 боевой БД («после») и красит итог при любом расхождении;
+  7. печатает по-русски таблицу «репозиторий × проверка -> ✓/✗» и итог.
 
 Гейт не обрывается на первой ошибке. Прогон с 0 собранных тестов, с
 пропущенными, xfail/xpass или deselected тестами считается красным.
@@ -39,6 +40,8 @@ CORE_DIR = Path(os.environ.get("ASSISTANT_CORE_DIR", "/opt/assistant-core"))
 LIVE_DB = CORE_DIR / "data" / "assistant.db"
 CHAT_VENV_BIN = CHAT_DIR / "backend" / ".venv" / "bin"
 CORE_VENV_BIN = CORE_DIR / ".venv" / "bin"
+CHAT_PERSONA = CHAT_DIR / "backend" / "tests" / "synthetic_persona.py"
+CORE_PERSONA = CORE_DIR / "tests" / "synthetic_persona.py"
 PYTEST_TIMEOUT_S = 900
 LINT_TIMEOUT_S = 300
 
@@ -282,6 +285,25 @@ def db_unchanged_check(before: str | None, after: str | None) -> CheckResult:
     return CheckResult(REPO_BOTH, name, True)
 
 
+def persona_drift_check(chat_copy: Path, core_copy: Path) -> CheckResult:
+    """Две копии synthetic_persona.py (chat-app и assistant-core) должны совпадать по SHA-256."""
+    name = "синтетическая персона (дрейф SHA-256)"
+    for path in (chat_copy, core_copy):
+        if not path.is_file():
+            return CheckResult(REPO_BOTH, name, False, f"нет файла: {path}")
+    try:
+        same = sha256_file(chat_copy) == sha256_file(core_copy)
+    except OSError as exc:
+        return CheckResult(REPO_BOTH, name, False, f"не удалось прочитать копии: {_exc_text(exc)}")
+    if not same:
+        return CheckResult(
+            REPO_BOTH, name, False,
+            "копии различаются — синхронизируйте backend/tests/synthetic_persona.py "
+            "и tests/synthetic_persona.py в assistant-core",
+        )
+    return CheckResult(REPO_BOTH, name, True)
+
+
 def overall_green(results: list[CheckResult]) -> bool:
     return bool(results) and all(result.ok for result in results)
 
@@ -363,6 +385,7 @@ def _run_all(save_dir: Path | None) -> list[CheckResult]:
         results.append(_safe_lint_step(
             REPO_CORE, lint_bin=CORE_VENV_BIN / "lint-imports", cwd=CORE_DIR, env_extra=None,
         ))
+        results.append(persona_drift_check(CHAT_PERSONA, CORE_PERSONA))
         results.append(db_unchanged_check(before, _sha_or_none(LIVE_DB)))
     finally:
         # В каталоге копия боевой БД и архив test_gdrive_client с копией секретов.
