@@ -94,11 +94,11 @@ Plans:
   4. Домен описан неизменяемыми dataclass и `WorkspaceClearance` с тремя значениями; use-cases (IntentRouter, SecretaryDialog, Methodist) зависят только от портов и домена.
   5. Внутрипроцессный `EventBus` доставляет опубликованное событие подписчику без внешних зависимостей и брокера.
 
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 02-01-PLAN.md — tracer: табель через порт (характеризация `_get_tydex_context`, `src/core`, `BaseTimesheetProvider`, адаптер AADHk, `src/composition.py`, DI секретаря, контракт `core-is-pure`, долг 5→4); доменные сущности PRT-01 и тесты чистоты ядра
+- [x] 02-01-PLAN.md — tracer: табель через порт (характеризация `_get_tydex_context`, `src/core`, `BaseTimesheetProvider`, адаптер AADHk, `src/composition.py`, DI секретаря, контракт `core-is-pure`, долг 5→4); доменные сущности PRT-01 и тесты чистоты ядра
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 02-02-PLAN.md — порты источника расписания, приёмника календаря и ЛК (`REQUIRES_CONFIRMATION`), адаптеры-обёртки, DI-протоколы клиентов, Protocol-проверка четырёх пар и разделение ролей
@@ -237,7 +237,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Страховочная сеть и каркас | 4/4 | Complete    | 2026-10-02 |
-| 2. Порты и домен без изменения поведения | 0/4 | Planned | - |
+| 2. Порты и домен без изменения поведения | 1/4 | In Progress|  |
 | 3. Персона как данные | 0/TBD | Not started | - |
 | 4. Владелец схемы БД и общая библиотека безопасности | 0/TBD | Not started | - |
 | 5. Единый HITL-примитив | 0/TBD | Not started | - |

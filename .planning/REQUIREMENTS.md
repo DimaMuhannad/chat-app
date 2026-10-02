@@ -32,7 +32,7 @@
 
 ### Порты и домен (PRT) — Фаза 2
 
-- [ ] **PRT-01** [assistant-core]: Доменные сущности как неизменяемые dataclass в `core/domain`: `ScheduleEvent`, `WorkRecord` (с `project_tag` вместо хардкода названия компании), `AcademicSubmission`, `Task` (область — свободная строка), `EmailMessage`, `Workspace`, `Persona`; enum `WorkspaceClearance` (`public`, `internal`, `restricted_nda`).
+- [x] **PRT-01** [assistant-core]: Доменные сущности как неизменяемые dataclass в `core/domain`: `ScheduleEvent`, `WorkRecord` (с `project_tag` вместо хардкода названия компании), `AcademicSubmission`, `Task` (область — свободная строка), `EmailMessage`, `Workspace`, `Persona`; enum `WorkspaceClearance` (`public`, `internal`, `restricted_nda`).
 - [ ] **PRT-02** [assistant-core]: Async-порты в `core/ports/`: `BaseConnector` (`connector_id`, `required_scopes`, `health_check`), `BaseScheduleProvider` (роль `schedule_source`), порт приёмника календаря (роль `calendar_sync`), `BaseTimesheetProvider`, `BaseLMSProvider` (`submit_grade` и `delete_task` помечены как требующие подтверждения). Роли расписания разделены (W8).
 - [ ] **PRT-03** [assistant-core]: `ScheduleParser` (schedule_source), `GoogleCalendarClient` (calendar_sync), `AadhkIngestionService` (timesheet), `GuapLmsClient` (lms) соответствуют своим портам напрямую или через адаптер-обёртку; Protocol-проверка (тест) это подтверждает; фикстуры существующих тестов не изменены.
 - [ ] **PRT-04** [assistant-core]: Зависимости `secretary_dialog.py` и `bot_handler.py` передаются через конструктор (по образцу `MethodistService`); inline-импорты конкретных коннекторов убраны; список `ignore_imports` из FND-02 пуст.
@@ -145,7 +145,7 @@
 | FND-02 | Phase 1 | Complete |
 | FND-03 | Phase 1 | Complete |
 | FND-04 | Phase 1 | Complete |
-| PRT-01 | Phase 2 | Pending |
+| PRT-01 | Phase 2 | Complete |
 | PRT-02 | Phase 2 | Pending |
 | PRT-03 | Phase 2 | Pending |
 | PRT-04 | Phase 2 | Pending |
