@@ -13,7 +13,15 @@ covered_files:
   - "docs/BASELINE.md"
   - "requirements-dev.txt"
   - "scripts/gate.py"
-covered_digest: "v2:sha256:57f438a056836bae435004a2c3616657a22b5cd0eb48bdfd6b52a2f27ce4b6b9"
+  - ".planning/phases/01-strahovochnaya-set-i-karkas/01-01-PLAN.md"
+  - ".planning/phases/01-strahovochnaya-set-i-karkas/01-02-PLAN.md"
+  - ".planning/phases/01-strahovochnaya-set-i-karkas/01-03-PLAN.md"
+  - ".planning/phases/01-strahovochnaya-set-i-karkas/01-04-PLAN.md"
+  - ".planning/phases/01-strahovochnaya-set-i-karkas/01-01-SUMMARY.md"
+  - ".planning/phases/01-strahovochnaya-set-i-karkas/01-02-SUMMARY.md"
+  - ".planning/phases/01-strahovochnaya-set-i-karkas/01-03-SUMMARY.md"
+  - ".planning/phases/01-strahovochnaya-set-i-karkas/01-04-SUMMARY.md"
+covered_digest: "v2:sha256:912048637a11d11755c5faba0e0e855c00336349994865980de3ffc5d369a727"
 behavior_unverified: 0
 overrides_applied: 0
 re_verification: null
