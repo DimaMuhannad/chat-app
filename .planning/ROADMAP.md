@@ -94,7 +94,20 @@ Plans:
   4. Домен описан неизменяемыми dataclass и `WorkspaceClearance` с тремя значениями; use-cases (IntentRouter, SecretaryDialog, Methodist) зависят только от портов и домена.
   5. Внутрипроцессный `EventBus` доставляет опубликованное событие подписчику без внешних зависимостей и брокера.
 
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+**Wave 1**
+- [ ] 02-01-PLAN.md — tracer: табель через порт (характеризация `_get_tydex_context`, `src/core`, `BaseTimesheetProvider`, адаптер AADHk, `src/composition.py`, DI секретаря, контракт `core-is-pure`, долг 5→4); доменные сущности PRT-01 и тесты чистоты ядра
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 02-02-PLAN.md — порты источника расписания, приёмника календаря и ЛК (`REQUIRES_CONFIRMATION`), адаптеры-обёртки, DI-протоколы клиентов, Protocol-проверка четырёх пар и разделение ролей
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 02-03-PLAN.md — характеризация трёх путей бота до рефакторинга, фабрики сборщика, DI в `EmailBotHandler`, долг `ignore_imports` = 0 (дефект /timesheet не чинится — решение владельца 2026-10-02, задача в backlog)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 02-04-PLAN.md — DI сервиса табеля в `LiveTickerService` и контракт `live-ticker-no-adapters` (перенесено из 02-03); внутрипроцессный `EventBus` и шесть доменных событий (не подключены к боевым потокам); приёмка фазы
 
 **Заметки для планирования**:
 - По аудиту blueprint: `src/calendar/client.py` — низкий объём переделки; `src/connectors/aadhk/parser.py` — умеренный; `src/connectors/guap_lms/client.py` — самый глубокий (становится первой реализацией интерфейса).
@@ -224,7 +237,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Страховочная сеть и каркас | 4/4 | Complete    | 2026-10-02 |
-| 2. Порты и домен без изменения поведения | 0/TBD | Not started | - |
+| 2. Порты и домен без изменения поведения | 0/4 | Planned | - |
 | 3. Персона как данные | 0/TBD | Not started | - |
 | 4. Владелец схемы БД и общая библиотека безопасности | 0/TBD | Not started | - |
 | 5. Единый HITL-примитив | 0/TBD | Not started | - |
