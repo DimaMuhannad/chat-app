@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Порты и домен без изменения поведения
 status: executing
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-10-02T09:56:11.562Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-10-02T10:01:52.006Z"
 last_activity: 2026-10-02
 last_activity_desc: Phase 02 execution started
-state_head: 9fe58adeade658953c6b10009627deeaa918bdb2
+state_head: 20b857bd7160740e86241221862e6afebf91f48b
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
   percent: 14
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-02)
 ## Current Position
 
 Phase: 02 (Порты и домен без изменения поведения) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-10-02 — Phase 02 execution started
 
@@ -74,6 +74,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 01 P04 | 8 min | 3 tasks | 4 files |
 | Phase 02 P01 | 4 min | 2 tasks | 12 files |
 | Phase 02 P02 | 8 min | 2 tasks | 6 files |
+| Phase 02 P03 | 5 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,8 @@ Progress: [█░░░░░░░░░] 14%
 - [Phase 02]: core-is-pure запрещает ядру все 13 прочих модулей верхнего уровня src; долг ignore_imports 5 -> 4
 - [Phase 02]: 02-02: все методы портов async; синхронный разбор payload парсера закрывает адаптер ScheduleParserSource
 - [Phase 02]: 02-02: BaseCalendarSink нейтрален к поставщику (event_id), REQUIRES_CONFIRMATION для submit_grade/delete_task только декларативна до Фазы 5, адаптер ЛК не подключён к боевым потокам
+- [Phase 02]: 02-03: дефект /timesheet (NameError cur_m_name) не исправлен по решению владельца; поведение заморожено тестом test_cmd_timesheet_characterization, исправление - в backlog
+- [Phase 02]: 02-03: Google Drive внедряется в EmailBotHandler фабрикой (drive_client_factory), а не экземпляром: сохраняется свежий клиент на колбэк
 
 ### Pending Todos
 
@@ -123,6 +126,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-02T09:56:11.362Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-10-02T10:01:51.741Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None

@@ -94,7 +94,7 @@ Plans:
   4. Домен описан неизменяемыми dataclass и `WorkspaceClearance` с тремя значениями; use-cases (IntentRouter, SecretaryDialog, Methodist) зависят только от портов и домена.
   5. Внутрипроцессный `EventBus` доставляет опубликованное событие подписчику без внешних зависимостей и брокера.
 
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 **Wave 1**
@@ -104,7 +104,7 @@ Plans:
 - [x] 02-02-PLAN.md — порты источника расписания, приёмника календаря и ЛК (`REQUIRES_CONFIRMATION`), адаптеры-обёртки, DI-протоколы клиентов, Protocol-проверка четырёх пар и разделение ролей
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 02-03-PLAN.md — характеризация трёх путей бота до рефакторинга, фабрики сборщика, DI в `EmailBotHandler`, долг `ignore_imports` = 0 (дефект /timesheet не чинится — решение владельца 2026-10-02, задача в backlog)
+- [x] 02-03-PLAN.md — характеризация трёх путей бота до рефакторинга, фабрики сборщика, DI в `EmailBotHandler`, долг `ignore_imports` = 0 (дефект /timesheet не чинится — решение владельца 2026-10-02, задача в backlog)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 02-04-PLAN.md — DI сервиса табеля в `LiveTickerService` и контракт `live-ticker-no-adapters` (перенесено из 02-03); внутрипроцессный `EventBus` и шесть доменных событий (не подключены к боевым потокам); приёмка фазы
@@ -237,7 +237,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Страховочная сеть и каркас | 4/4 | Complete    | 2026-10-02 |
-| 2. Порты и домен без изменения поведения | 2/4 | In Progress|  |
+| 2. Порты и домен без изменения поведения | 3/4 | In Progress|  |
 | 3. Персона как данные | 0/TBD | Not started | - |
 | 4. Владелец схемы БД и общая библиотека безопасности | 0/TBD | Not started | - |
 | 5. Единый HITL-примитив | 0/TBD | Not started | - |
