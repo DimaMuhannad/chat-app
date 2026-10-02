@@ -180,18 +180,19 @@ SHA взяты из заголовков `docs/baseline/pytest-chat-app.txt` и 
 
 Реальных секретов среди находок нет: это определение списка слов в самом shield, пример конфигурации в документе архитектуры и учебные фиктивные ключи в тестах.
 
-Известные находки `--all` на старте (всего 15):
+Известные находки `--all` (15 на старте Фазы 1 и 3 по решению владельца в Фазе 3, всего 18):
 
 | Репозиторий | Путь | Вид | Число |
 |-------------|------|-----|-------|
 | chat-app | docs/UNIVERSAL_ARCHITECTURE_BLUEPRINT.md | nda-keyword | 3 |
 | chat-app | scripts/security_shield.py | nda-keyword | 3 |
 | assistant-core | scripts/security_shield.py | nda-keyword | 3 |
+| assistant-core | config/persona.yaml | nda-keyword | 3 (решение владельца 2026-10-02 (OQ1), снимается в Фазе 4) |
 | assistant-core | tests/test_debrief_parser.py | secret: Generic Bearer Secret | 2 |
 | assistant-core | tests/test_notion_client.py | secret: Generic Bearer Secret | 1 |
 | assistant-core | tests/test_voice.py | secret: Generic Bearer Secret | 3 |
 
-Итого: chat-app 6, assistant-core 9. Записи удаляются в том же коммите, что исправляет соответствующее место; если запись осталась после исправления места, гейт краснеет на устаревшей записи.
+Итого: chat-app 6, assistant-core 12, всего 18. Записи удаляются в том же коммите, что исправляет соответствующее место; если запись осталась после исправления места, гейт краснеет на устаревшей записи.
 
 ## Итог после Фазы 1
 
@@ -250,6 +251,6 @@ src.notifier.bot_handler -> src.sender.email_sender
 1. 100% pytest в обоих репозиториях на каждом шаге; проверяется гейтом.
 2. Каждый шаг — атомарный коммит в своём репозитории; откат через `git revert` по SHA.
 3. Существующие тесты не удаляются и не ослабляются: без skip, xfail, deselect и правки ассертов ради зелёного итога.
-4. Списки долга (ignore_imports import-linter и известные ложные срабатывания shield) только сокращаются.
+4. Списки долга (ignore_imports import-linter и известные ложные срабатывания shield) только сокращаются. Единственное согласованное расширение - запись для файла данных персоны `config/persona.yaml` (решение владельца 2026-10-02, OQ1); она снимается правилом Фазы 4 (SEC-01).
 5. Сервисы chat-app, assistant-worker и dev-bridge остаются остановленными.
 6. pytest chat-app запускается только через гейт или на копии БД.

@@ -62,6 +62,9 @@ KNOWN_SHIELD_FALSE_POSITIVES: dict[str, dict[tuple[str, str], int]] = {
     },
     "assistant-core": {
         ("scripts/security_shield.py", "nda-keyword"): 3,
+        # Решение владельца 2026-10-02 (OQ1): единственное исключение для файла данных персоны;
+        # снимается правилом Фазы 4 (SEC-01).
+        ("config/persona.yaml", "nda-keyword"): 3,
         ("tests/test_debrief_parser.py", "secret:Generic Bearer Secret"): 2,
         ("tests/test_notion_client.py", "secret:Generic Bearer Secret"): 1,
         ("tests/test_voice.py", "secret:Generic Bearer Secret"): 3,

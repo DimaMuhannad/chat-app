@@ -313,6 +313,7 @@ def test_run_shield_step_new_finding_is_red_without_raw_output(tmp_path, monkeyp
     assert "git.example" not in result.detail
 
 
-def test_known_shield_false_positives_total_is_fifteen():
+def test_known_shield_false_positives_total_is_eighteen():
+    # 15 находок Фазы 1 + 3 в config/persona.yaml по решению владельца 2026-10-02 (OQ1).
     total = sum(sum(entries.values()) for entries in gate.KNOWN_SHIELD_FALSE_POSITIVES.values())
-    assert total == 15
+    assert total == 18
