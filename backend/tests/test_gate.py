@@ -143,3 +143,11 @@ def test_db_unchanged_check_differing_hash_is_red():
 
 def test_db_unchanged_check_equal_hash_is_green():
     assert gate.db_unchanged_check("a", "a").ok is True
+
+
+def test_lint_imports_step_missing_binary_is_red_without_exception(tmp_path):
+    result = gate.run_lint_imports_step(
+        "chat-app", tmp_path / "нет" / "lint-imports", tmp_path, None
+    )
+    assert result.ok is False
+    assert "requirements-dev.txt" in result.detail

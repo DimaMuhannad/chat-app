@@ -52,3 +52,7 @@ uploads/
 
 .agy/*
 !.agy/config.example
+
+# import-linter / grimp caches
+.import_linter_cache/
+.grimp_cache/

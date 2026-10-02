@@ -143,6 +143,12 @@ SHA взяты из заголовков `docs/baseline/pytest-chat-app.txt` и 
 
 Тесты контракта (`tests/test_architecture_contract.py`, 5 штук): падение на синтетическом нарушении, успех на чистом пакете, страж «модули контракта есть в графе», верхняя граница долга, падение реального контракта на копии пакета с внедрённым запрещённым импортом.
 
+### chat-app
+
+Один контракт `app-no-assistant-core` (type `forbidden`): пакет `app` не импортирует `src` (внутренние модули assistant-core, внешний запрещённый модуль через `include_external_packages = True`). `root_packages = app, app.core` — порция namespace-каталога `app/core`. Запуск: `PYTHONPATH=backend lint-imports --no-logo --no-cache` из `/opt/chat-app` (lint-imports добавляет в `sys.path` только текущий каталог, а пакет `app` лежит в `backend/`); результат «1 kept, 0 broken». Нарушений нет, `ignore_imports` пуст, верхняя граница долга в тесте равна 0. Контракт защищает от появления связи.
+
+Тесты контракта: `backend/tests/test_architecture_contract.py`, те же пять имён, что в assistant-core.
+
 ## Правила
 
 1. 100% pytest в обоих репозиториях на каждом шаге; проверяется гейтом.

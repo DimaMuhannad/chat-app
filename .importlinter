@@ -1,0 +1,16 @@
+[importlinter]
+# app.core - namespace-каталог без __init__.py: без перечисления его "порции" grimp
+# не видит эти модули. Пакет app лежит в backend/, поэтому запуск идёт из корня
+# репозитория с PYTHONPATH=backend (lint-imports добавляет в sys.path только cwd).
+root_packages =
+    app
+    app.core
+include_external_packages = True
+
+[importlinter:contract:app-no-assistant-core]
+name = backend chat-app не импортирует внутренние модули assistant-core
+type = forbidden
+source_modules =
+    app
+forbidden_modules =
+    src

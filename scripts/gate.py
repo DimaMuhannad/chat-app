@@ -350,6 +350,11 @@ def _run_all(save_dir: Path | None) -> list[CheckResult]:
                 cwd=CHAT_DIR, env_extra=chat_pytest_env(db_copy),
                 tmp_dir=tmp_dir, save_dir=save_dir,
             ))
+        # lint-imports кладёт в sys.path только cwd, а пакет app лежит в backend/.
+        results.append(_safe_lint_step(
+            REPO_CHAT, lint_bin=CHAT_VENV_BIN / "lint-imports", cwd=CHAT_DIR,
+            env_extra={"PYTHONPATH": str(CHAT_DIR / "backend")},
+        ))
         # Без переопределения БД: src/config.py вызывает load_dotenv(..., override=True).
         results.append(_safe_pytest_step(
             REPO_CORE, pytest_bin=CORE_VENV_BIN / "pytest", target=str(CORE_DIR / "tests"),
