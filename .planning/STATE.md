@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 03
 current_phase_name: Персона как данные
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-10-02T15:27:45.702Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-10-02T15:37:31.108Z"
 last_activity: 2026-10-02
 last_activity_desc: Phase 03 execution started
-state_head: dbcd42175d8cdc05efec2dc4347963d8d8023577
+state_head: a1120b2e71f1fd63baf02bde958ea486c8c74467
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 18
-  completed_plans: 9
+  completed_plans: 10
   percent: 29
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-02)
 ## Current Position
 
 Phase: 03 (Персона как данные) — EXECUTING
-Plan: 2 of 10
+Plan: 3 of 10
 Status: Ready to execute
 Last activity: 2026-10-02 — Phase 03 execution started
 
@@ -78,6 +78,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 02 P03 | 5 min | 2 tasks | 5 files |
 | Phase 02 P04 | 4 min | 3 tasks | 9 files |
 | Phase 03 P01 | 8 min | 2 tasks | 11 files |
+| Phase 03 P02 | 10min | 2 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,7 @@ Progress: [███░░░░░░░] 29%
 - [Phase 02]: 02-04: EventBus - одна конкретная шина без Protocol, доставка по точному типу, в журнал сбоя только имя обработчика и тип события; шина не подключена к боевым потокам (D-17)
 - [Phase 02]: 02-04: LiveTickerService получает timesheet_service через конструктор, контракт live-ticker-no-adapters с пустым долгом, lint-imports 4 kept, 0 broken; Фаза 2 принята: гейт зелёный, 223 теста assistant-core
 - [Phase 03]: 03-01: эталоны 8 промптов D-08 (+debrief_call) закоммичены в assistant-core до правки src; тест снимает текст по месту вызова LLM через фейк и не импортирует константы промптов; методисту в тесте секретаря нужен свой фейк (иначе реальный genai.Client уходит в сеть), реальный клиент в тестах снимка запрещён autouse-фикстурой
+- [Phase 03]: 03-02: seed-CLI сначала проверяет файл персоны, потом открывает БД; chat-app читает персону только из таблиц (без PyYAML)
 
 ### Pending Todos
 
@@ -132,6 +134,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-02T15:27:45.465Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-10-02T15:37:30.860Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
