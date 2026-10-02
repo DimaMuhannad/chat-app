@@ -2,17 +2,17 @@
 gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Порты и домен без изменения поведения
-status: executing
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-10-02T10:01:52.006Z"
+status: verifying
+stopped_at: Completed 02-04-PLAN.md
+last_updated: "2026-10-02T10:07:00.247Z"
 last_activity: 2026-10-02
 last_activity_desc: Phase 02 execution started
-state_head: 20b857bd7160740e86241221862e6afebf91f48b
+state_head: 0615a3ddb85d5d0f9dc68b62c12d9ccbc5175a94
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
   percent: 14
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-10-02)
 
 Phase: 02 (Порты и домен без изменения поведения) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-02 — Phase 02 execution started
 
 Progress: [█░░░░░░░░░] 14%
@@ -75,6 +75,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 02 P01 | 4 min | 2 tasks | 12 files |
 | Phase 02 P02 | 8 min | 2 tasks | 6 files |
 | Phase 02 P03 | 5 min | 2 tasks | 5 files |
+| Phase 02 P04 | 4 min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,8 @@ Progress: [█░░░░░░░░░] 14%
 - [Phase 02]: 02-02: BaseCalendarSink нейтрален к поставщику (event_id), REQUIRES_CONFIRMATION для submit_grade/delete_task только декларативна до Фазы 5, адаптер ЛК не подключён к боевым потокам
 - [Phase 02]: 02-03: дефект /timesheet (NameError cur_m_name) не исправлен по решению владельца; поведение заморожено тестом test_cmd_timesheet_characterization, исправление - в backlog
 - [Phase 02]: 02-03: Google Drive внедряется в EmailBotHandler фабрикой (drive_client_factory), а не экземпляром: сохраняется свежий клиент на колбэк
+- [Phase 02]: 02-04: EventBus - одна конкретная шина без Protocol, доставка по точному типу, в журнал сбоя только имя обработчика и тип события; шина не подключена к боевым потокам (D-17)
+- [Phase 02]: 02-04: LiveTickerService получает timesheet_service через конструктор, контракт live-ticker-no-adapters с пустым долгом, lint-imports 4 kept, 0 broken; Фаза 2 принята: гейт зелёный, 223 теста assistant-core
 
 ### Pending Todos
 
@@ -126,6 +129,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-02T10:01:51.741Z
-Stopped at: Completed 02-03-PLAN.md
+Last session: 2026-10-02T10:07:00.074Z
+Stopped at: Completed 02-04-PLAN.md
 Resume file: None

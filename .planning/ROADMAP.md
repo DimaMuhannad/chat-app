@@ -94,7 +94,7 @@ Plans:
   4. Домен описан неизменяемыми dataclass и `WorkspaceClearance` с тремя значениями; use-cases (IntentRouter, SecretaryDialog, Methodist) зависят только от портов и домена.
   5. Внутрипроцессный `EventBus` доставляет опубликованное событие подписчику без внешних зависимостей и брокера.
 
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans executed
 
 Plans:
 **Wave 1**
@@ -107,7 +107,7 @@ Plans:
 - [x] 02-03-PLAN.md — характеризация трёх путей бота до рефакторинга, фабрики сборщика, DI в `EmailBotHandler`, долг `ignore_imports` = 0 (дефект /timesheet не чинится — решение владельца 2026-10-02, задача в backlog)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 02-04-PLAN.md — DI сервиса табеля в `LiveTickerService` и контракт `live-ticker-no-adapters` (перенесено из 02-03); внутрипроцессный `EventBus` и шесть доменных событий (не подключены к боевым потокам); приёмка фазы
+- [x] 02-04-PLAN.md — DI сервиса табеля в `LiveTickerService` и контракт `live-ticker-no-adapters` (перенесено из 02-03); внутрипроцессный `EventBus` и шесть доменных событий (не подключены к боевым потокам); приёмка фазы
 
 **Заметки для планирования**:
 - По аудиту blueprint: `src/calendar/client.py` — низкий объём переделки; `src/connectors/aadhk/parser.py` — умеренный; `src/connectors/guap_lms/client.py` — самый глубокий (становится первой реализацией интерфейса).
@@ -237,7 +237,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Страховочная сеть и каркас | 4/4 | Complete    | 2026-10-02 |
-| 2. Порты и домен без изменения поведения | 3/4 | In Progress|  |
+| 2. Порты и домен без изменения поведения | 4/4 | In Progress|  |
 | 3. Персона как данные | 0/TBD | Not started | - |
 | 4. Владелец схемы БД и общая библиотека безопасности | 0/TBD | Not started | - |
 | 5. Единый HITL-примитив | 0/TBD | Not started | - |
