@@ -166,6 +166,85 @@ SHA взяты из заголовков `docs/baseline/pytest-chat-app.txt` и 
 7. PER-08 — сканер хардкода не находит токены владельца вне allowlist; denylist теста каркаса заменяется данными персоны по умолчанию;
 8. PER-09 — test_persona_config.py: те же кодовые пути дают для синтетической персоны иные промпты, список рабочих пространств, дефолты и scope-решения.
 
+## Политика security_shield
+
+Решение владельца от 2026-10-02: вариант «Полный скан + список 15 (Рекомендуется)», внутренний идентификатор `b-all-frozen`.
+
+Что это значит:
+
+- Гейт запускает `scripts/security_shield.py` каждого репозитория с ключом `--all` (скан всех отслеживаемых файлов), а не только проиндексированных и изменённых. Режим по умолчанию на чистом дереве ничего не сканирует и был бы «зелёным по умолчанию»; поэтому он не используется. В `scripts/gate.py` это константа `SHIELD_MODE = "all"`.
+- Строка shield красная, если: найдена новая находка сверх списка ниже; shield не запустился или упал (таймаут, неожиданный код возврата, код 1 без распознанных находок); запись списка устарела (находки по ней больше нет, а в списке она осталась).
+- Список известных ложных срабатываний `KNOWN_SHIELD_FALSE_POSITIVES` только сокращается (правило 4 ниже). Автоматически он не пополняется, файлы Фазы 1 в него не вносятся.
+- В консоль гейта и в этот документ попадают только путь, вид находки и число. Адреса remote, e-mail автора, текст NDA-слов и номера строк не печатаются и не сохраняются.
+- Сам `scripts/security_shield.py` в Фазе 1 не менялся.
+
+Реальных секретов среди находок нет: это определение списка слов в самом shield, пример конфигурации в документе архитектуры и учебные фиктивные ключи в тестах.
+
+Известные находки `--all` на старте (всего 15):
+
+| Репозиторий | Путь | Вид | Число |
+|-------------|------|-----|-------|
+| chat-app | docs/UNIVERSAL_ARCHITECTURE_BLUEPRINT.md | nda-keyword | 3 |
+| chat-app | scripts/security_shield.py | nda-keyword | 3 |
+| assistant-core | scripts/security_shield.py | nda-keyword | 3 |
+| assistant-core | tests/test_debrief_parser.py | secret: Generic Bearer Secret | 2 |
+| assistant-core | tests/test_notion_client.py | secret: Generic Bearer Secret | 1 |
+| assistant-core | tests/test_voice.py | secret: Generic Bearer Secret | 3 |
+
+Итого: chat-app 6, assistant-core 9. Записи удаляются в том же коммите, что исправляет соответствующее место; если запись осталась после исправления места, гейт краснеет на устаревшей записи.
+
+## Итог после Фазы 1
+
+Финальный прогон `python3 scripts/gate.py` из `/opt/chat-app` (2026-10-02), код возврата 0:
+
+| Репозиторий | Проверка | Результат |
+|-------------|----------|-----------|
+| chat-app | pytest — тестов: 68 | ✓ |
+| chat-app | import-linter | ✓ |
+| assistant-core | pytest — тестов: 139 | ✓ |
+| assistant-core | import-linter | ✓ |
+| chat-app | security_shield (--all) | ✓ |
+| assistant-core | security_shield (--all) | ✓ |
+| оба | синтетическая персона (дрейф SHA-256) | ✓ |
+| оба | боевая assistant.db не изменена | ✓ |
+
+ИТОГ: ЗЕЛЁНЫЙ.
+
+Число тестов до и после фазы:
+
+| Репозиторий | На старте («Результаты на старте») | После Фазы 1 | Добавлено |
+|-------------|------------------------------------|--------------|-----------|
+| chat-app | 14 | 68 | 54 |
+| assistant-core | 127 | 139 | 12 |
+| Всего | 141 | 207 | 66 |
+
+Все 141 стартовых теста остались и проходят; ни один не удалён и не ослаблен, skip, xfail и deselect не вводились. Добавленные тесты относятся к гейту (`test_gate.py`), архитектурному контракту и каркасу синтетической персоны.
+
+Инструменты: import-linter 2.15, grimp 3.17 (в обоих `.venv`).
+
+Команда гейта: `python3 /opt/chat-app/scripts/gate.py`; строка с ней добавлена в `CLAUDE.md`, раздел Development Commands.
+
+Подтверждения:
+
+- Продакшен-код не изменён: за фазу нет коммитов и правок в `backend/app` (chat-app) и `src` (assistant-core).
+- Сервисы chat-app и dev-bridge остановлены (`inactive`); assistant-worker не активен (`failed` с прошлого раза, до Фазы 1) и не запускался.
+- SHA-256 боевой `assistant.db` равен стартовому (префикс `baef14f7`, полное значение в разделе «Защита боевой БД»).
+- Локальные коммиты assistant-core лежат в ветке `main` по решению владельца; push не выполнялся.
+
+### Сверка ignore_imports с `/opt/assistant-core/.importlinter`
+
+Пять записей долга, дословно из файла конфигурации (удаляются Фазой 2, PRT-04):
+
+```text
+src.brain.secretary_dialog -> src.connectors.aadhk.parser
+src.notifier.bot_handler -> src.connectors.aadhk.parser
+src.notifier.bot_handler -> src.connectors.gdrive.client
+src.notifier.bot_handler -> src.connectors.guap_lms.client
+src.notifier.bot_handler -> src.sender.email_sender
+```
+
+Совпадение с таблицей раздела «Архитектурный контракт и долг»: 5 из 5.
+
 ## Правила
 
 1. 100% pytest в обоих репозиториях на каждом шаге; проверяется гейтом.
