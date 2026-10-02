@@ -179,3 +179,140 @@ def test_persona_drift_check_missing_file_is_red_without_exception(tmp_path):
     result = gate.persona_drift_check(a, tmp_path / "нет.py")
     assert result.ok is False
     assert "нет файла" in result.detail
+
+
+# --- security_shield: разбор и сверка находок (синтетический вывод) ---
+
+_SYNTH_HEADER = (
+    "\U0001F6E1 Running Security Shield on repository: {repo}\n"
+    "   • Origin Remote: https://git.example/synthetic/repo.git\n"
+    "   • Author Email:  synthetic-author.example\n"
+    "   • Profile Mode:  PUBLIC / ACADEMIC\n"
+    "   • Scanning 7 files...\n"
+)
+
+
+def _synthetic_shield_output(repo: Path) -> str:
+    marker = "synthetic_marker_alpha"
+    return (
+        _SYNTH_HEADER.format(repo=repo)
+        + "\n❌ SECURITY VIOLATIONS DETECTED:\n"
+        + f"   \U0001F6A8 {repo}/docs/a.md:3 - Found proprietary corporate keyword '{marker}' in public repository!\n"
+        + f"   \U0001F6A8 {repo}/docs/a.md:9 - Found proprietary corporate keyword '{marker}' in public repository!\n"
+        + f"   \U0001F6A8 {repo}/tests/t.py:12 - Found potential Generic Bearer Secret\n"
+        + "   \U0001F6A8 something unexpected without a known shape\n"
+        + "\nCommit or push blocked.\n"
+    )
+
+
+def test_parse_shield_findings_normalizes_and_drops_sensitive_text(tmp_path):
+    found = gate.parse_shield_findings(_synthetic_shield_output(tmp_path), tmp_path)
+    assert found == {
+        ("docs/a.md", "nda-keyword"): 2,
+        ("tests/t.py", "secret:Generic Bearer Secret"): 1,
+        ("(нераспознано)", "unparsed"): 1,
+    }
+    flat = " ".join(f"{path} {kind} {count}" for (path, kind), count in found.items())
+    assert "synthetic_marker_alpha" not in flat
+    assert "git.example" not in flat
+    assert "Origin" not in flat
+
+
+def test_parse_shield_findings_special_kinds(tmp_path):
+    output = (
+        "   \U0001F6A8 Forbidden file pattern committed: credentials.json\n"
+        "   \U0001F6A8 CRITICAL: synthetic remote problem\n"
+        f"   \U0001F6A8 {tmp_path}/x.bin - Read error: boom\n"
+    )
+    assert gate.parse_shield_findings(output, tmp_path) == {
+        ("credentials.json", "forbidden-file"): 1,
+        ("(remote)", "remote"): 1,
+        ("x.bin", "read-error"): 1,
+    }
+
+
+def test_parse_shield_findings_ignores_header_only_output(tmp_path):
+    assert not gate.parse_shield_findings(_SYNTH_HEADER.format(repo=tmp_path), tmp_path)
+
+
+def test_compare_shield_findings_equal_sets_no_problems():
+    found = gate.collections.Counter({("docs/a.md", "nda-keyword"): 2})
+    assert gate.compare_shield_findings(found, {("docs/a.md", "nda-keyword"): 2}) == ([], [])
+
+
+def test_compare_shield_findings_extra_finding_is_new():
+    found = gate.collections.Counter({("docs/a.md", "nda-keyword"): 3})
+    new, stale = gate.compare_shield_findings(found, {("docs/a.md", "nda-keyword"): 2})
+    assert new and not stale
+    assert "docs/a.md" in new[0]
+
+
+def test_compare_shield_findings_missing_finding_is_stale():
+    found = gate.collections.Counter({("docs/a.md", "nda-keyword"): 1})
+    new, stale = gate.compare_shield_findings(found, {("docs/a.md", "nda-keyword"): 2})
+    assert stale and not new
+
+
+def _fake_repo(tmp_path, script_body: str) -> Path:
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "security_shield.py").write_text(script_body, encoding="utf-8")
+    return tmp_path
+
+
+def test_run_shield_step_missing_script_is_red(tmp_path):
+    result = gate.run_shield_step("chat-app", tmp_path)
+    assert result.ok is False
+
+
+def test_run_shield_step_unexpected_returncode_is_red(tmp_path):
+    repo = _fake_repo(tmp_path, "import sys\nsys.exit(2)\n")
+    result = gate.run_shield_step("chat-app", repo)
+    assert result.ok is False
+    assert "сбой" in result.detail
+
+
+def test_run_shield_step_code_one_without_findings_is_red(tmp_path):
+    repo = _fake_repo(tmp_path, "import sys\nprint('Scanning 3 files...')\nsys.exit(1)\n")
+    result = gate.run_shield_step("chat-app", repo)
+    assert result.ok is False
+    assert "без распознанных находок" in result.detail
+
+
+def test_run_shield_step_empty_scan_is_red_in_all_mode(tmp_path, monkeypatch):
+    monkeypatch.setattr(gate, "SHIELD_MODE", "all")
+    repo = _fake_repo(tmp_path, "print('No staged or modified files found to scan.')\n")
+    result = gate.run_shield_step("chat-app", repo)
+    assert result.ok is False
+    assert "ничего не просканировал" in result.detail
+
+
+def test_run_shield_step_clean_scan_is_green(tmp_path, monkeypatch):
+    monkeypatch.setattr(gate, "SHIELD_MODE", "all")
+    monkeypatch.setitem(gate.KNOWN_SHIELD_FALSE_POSITIVES, "synthetic-repo", {})
+    repo = _fake_repo(tmp_path, "print('Scanning 4 files...')\n")
+    assert gate.run_shield_step("synthetic-repo", repo).ok is True
+
+
+def test_run_shield_step_new_finding_is_red_without_raw_output(tmp_path, monkeypatch):
+    monkeypatch.setattr(gate, "SHIELD_MODE", "all")
+    monkeypatch.setitem(gate.KNOWN_SHIELD_FALSE_POSITIVES, "synthetic-repo", {})
+    body = (
+        "import sys\n"
+        "print('   \\u2022 Origin Remote: https://git.example/synthetic/repo.git')\n"
+        "print('Scanning 4 files...')\n"
+        "print('   \\U0001F6A8 /x/docs/a.md:3 - Found proprietary corporate keyword "
+        "synthetic_marker_alpha in public repository!')\n"
+        "sys.exit(1)\n"
+    )
+    repo = _fake_repo(tmp_path, body)
+    result = gate.run_shield_step("synthetic-repo", repo)
+    assert result.ok is False
+    assert "новая находка" in result.detail
+    assert "synthetic_marker_alpha" not in result.detail
+    assert "git.example" not in result.detail
+
+
+def test_known_shield_false_positives_total_is_fifteen():
+    total = sum(sum(entries.values()) for entries in gate.KNOWN_SHIELD_FALSE_POSITIVES.values())
+    assert total == 15
