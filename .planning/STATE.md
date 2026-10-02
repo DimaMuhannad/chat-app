@@ -20,10 +20,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-01)
+See: .planning/PROJECT.md (updated 2026-10-02)
 
 **Core value:** Профиль владельца целиком живёт в данных, а платформа работает для любой персоны — без регрессии поведения и без ослабления HITL и air-gap NDA.
-**Current focus:** Phase 01 — Страховочная сеть и каркас
+**Current focus:** Phase 02 — Порты и домен без изменения поведения
 
 ## Current Position
 
@@ -97,10 +97,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 1] Состояние тестов на старте неизвестно; возможны красные тесты, которые нужно устранить без ослабления ассертов.
 - [Phase 3] Открыт вопрос: где живёт загрузчик персоны до появления общей библиотеки (Фаза 4).
 - [Phase 4] Открыт вопрос: физическое расположение общей библиотеки; артефакты в корне assistant-core (пустой `assistant.db`, каталог `sqlite+aiosqlite:`).
-- [Phase 1] ВНИМАНИЕ: тесты chat-app пишут в боевую `assistant.db` — baseline снимать только на копии БД.
+- [Phase 1] Тесты chat-app пишут в боевую `assistant.db` — прогонять только через `python3 scripts/gate.py` (работает на копии БД, хеш боевой БД контролируется). Baseline: 14 + 127 тестов, все зелёные.
+- [Phase 1 → 2] Открытые замечания код-ревью (`01-REVIEW-DISPOSITION.md`, 14 открыто, критичных нет): WR-03 (в гейте нет нижней границы числа тестов, наследуется `PYTEST_ADDOPTS`) стоит закрыть до рефакторинга Фазы 2; WR-05 (гейт оставляет каталоги `gate-*` в `/opt/assistant-core/sqlite+aiosqlite:/tmp/`, ~70 МБ); WR-07 (ФИО/git-аккаунт владельца открытым текстом в `test_synthetic_persona.py` обоих репозиториев как deny-list; заменит PER-08 в Фазе 3).
+- [Phase 2] Нарушение `src.notifier.live_ticker -> src.connectors.aadhk.parser` записано в BASELINE; 5 записей `ignore_imports` в assistant-core убирает PRT-04.
 - [Перед разморозкой chat-app] API без аутентификации и CORS `*` (v2: AUTH2-01/02) — решение владельца.
 - [Операционное] Ключ в юните dev-bridge (OPS-02) — владелец не ротирует; assistant-worker уходит в SIGKILL (OPS-03); `notion_dev.py` в chat-app с битым импортом (OPS-04, вне миграции).
 
