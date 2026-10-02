@@ -40,10 +40,10 @@
 
 ### Персона как данные (PER, BCK) — Фаза 3
 
-- [ ] **PER-01** [chat-app + assistant-core]: Схема `config/persona.yaml` с валидацией (Pydantic) и загрузчик; персона `popov-da-default` загружается при отсутствии `PERSONA_CONFIG_PATH`; ID пользователей Telegram и иные идентификаторы подставляются из окружения, а не хранятся в файле.
+- [x] **PER-01** [chat-app + assistant-core]: Схема `config/persona.yaml` с валидацией (Pydantic) и загрузчик; персона `popov-da-default` загружается при отсутствии `PERSONA_CONFIG_PATH`; ID пользователей Telegram и иные идентификаторы подставляются из окружения, а не хранятся в файле.
 - [x] **PER-02** [chat-app + assistant-core]: Таблицы `personas`, `workspaces`, `connector_bindings` (схема blueprint разд. 3.2); роли привязок: `schedule_source`, `calendar_sync`, `timesheet`, `lms`, `git_source`, `notion`; на одну роль допускается несколько привязок (W8). До Фазы 4 таблицы создаются существующим механизмом инициализации и переходят под миграции в Фазе 4.
 - [ ] **PER-03** [chat-app]: `PROJECTS_REGISTRY` удалён как код; Security Tile и `/api/v1/security/overview` строятся из `workspaces`. Персона по умолчанию содержит все 4 рабочих пространства (chat-app и assistant-core — public, кафедра физики — internal, Тидекс — restricted_nda); вывод идентичен текущему (W2). Пути — данные, раскладка каталогов не навязывается (W6).
-- [ ] **PER-04** [chat-app + assistant-core]: NDA-правила (`forbidden_remote_substrings`, `forbidden_keywords`, `clearance`) — данные рабочего пространства; признак `is_tydex` по id/префиксу заменён на `clearance`. Три уровня допуска (W4): public и internal — секреты и запрещённые файлы; restricted_nda — дополнительно remote, запрещённые слова и запрет отправки содержимого в LLM. Тест эквивалентности (W3): явный чек-лист всех сегодняшних NDA-проверок (`security.py` и обе копии `security_shield.py`), каждая воспроизводится из данных без ослабления блокировки.
+- [x] **PER-04** [chat-app + assistant-core]: NDA-правила (`forbidden_remote_substrings`, `forbidden_keywords`, `clearance`) — данные рабочего пространства; признак `is_tydex` по id/префиксу заменён на `clearance`. Три уровня допуска (W4): public и internal — секреты и запрещённые файлы; restricted_nda — дополнительно remote, запрещённые слова и запрет отправки содержимого в LLM. Тест эквивалентности (W3): явный чек-лист всех сегодняшних NDA-проверок (`security.py` и обе копии `security_shield.py`), каждая воспроизводится из данных без ослабления блокировки.
 - [ ] **PER-05** [chat-app]: Дефолты области 'ГУАП' (`db.py`, `dashboard_schemas.py`) и ФИО/титул/'ГУАП'/'Тидекс' в статике `index.html` заменены данными персоны; веб-интерфейс получает их из `/api/v1/persona/current` (white-label).
 - [ ] **PER-06** [assistant-core]: Параметры коннекторов, зашитые в код ('Тидекс' как `default_project`, норма 8.5 ч/день, короткие названия предметов и слоты расписания, адреса сайта расписания и личного кабинета, каталог методических файлов), читаются из персоны/`connector_bindings`; точный перечень — по результатам аудита в plan-phase 3.
 - [ ] **PER-07** [assistant-core]: Системные промпты секретаря, маршрутизатора и методиста вынесены в Jinja2-шаблоны. Пререквизит (W10): до переноса сохранён точный текст всех промптов; тест рендерит шаблоны с персоной по умолчанию и сравнивает с сохранённым текстом символ в символ. Golden-набор ответов LLM не требуется.
@@ -150,10 +150,10 @@
 | PRT-03 | Phase 2 | Complete |
 | PRT-04 | Phase 2 | Complete |
 | PRT-05 | Phase 2 | Complete |
-| PER-01 | Phase 3 | Pending |
+| PER-01 | Phase 3 | Complete |
 | PER-02 | Phase 3 | Complete |
 | PER-03 | Phase 3 | Pending |
-| PER-04 | Phase 3 | Pending |
+| PER-04 | Phase 3 | Complete |
 | PER-05 | Phase 3 | Pending |
 | PER-06 | Phase 3 | Pending |
 | PER-07 | Phase 3 | Pending |

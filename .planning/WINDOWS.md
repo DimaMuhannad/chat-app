@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 1
+open_count: 0
 waived_count: 0
-fixed_count: 0
+fixed_count: 1
 total_count: 1
-last_updated: 2026-10-02T15:36:40.605Z
+last_updated: 2026-10-02T15:45:05.144Z
 ---
 
 # Broken Windows Ledger
@@ -15,7 +15,7 @@ last_updated: 2026-10-02T15:36:40.605Z
 
 | id | phase | kind | file | line | description | status | reason | recorded_at | resolved_at |
 |----|-------|------|------|------|-------------|--------|--------|-------------|-------------|
-| 1 | 03 | stub |  |  | assistant-core src/persona/seed.py: persona_rows возвращает пустые списки, пространства и привязки заполняет план 03-03 | open |  | 2026-10-02T15:36:40.605Z |  |
+| 1 | 03 | stub |  |  | assistant-core src/persona/seed.py: persona_rows возвращает пустые списки, пространства и привязки заполняет план 03-03 | fixed |  | 2026-10-02T15:36:40.605Z | 2026-10-02T15:45:05.144Z |
 
 ````json
 [
@@ -26,10 +26,10 @@ last_updated: 2026-10-02T15:36:40.605Z
     "file": "",
     "line": null,
     "description": "assistant-core src/persona/seed.py: persona_rows возвращает пустые списки, пространства и привязки заполняет план 03-03",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-10-02T15:36:40.605Z",
-    "resolved_at": null,
+    "resolved_at": "2026-10-02T15:45:05.144Z",
     "milestone": null
   }
 ]

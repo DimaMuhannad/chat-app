@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 03
 current_phase_name: Персона как данные
 status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-10-02T15:37:31.108Z"
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-10-02T15:46:07.721Z"
 last_activity: 2026-10-02
 last_activity_desc: Phase 03 execution started
-state_head: a1120b2e71f1fd63baf02bde958ea486c8c74467
+state_head: ff1c871e3ca1f9a358816215d80c72a9a52a2929
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 18
-  completed_plans: 10
+  completed_plans: 11
   percent: 29
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-02)
 ## Current Position
 
 Phase: 03 (Персона как данные) — EXECUTING
-Plan: 3 of 10
+Plan: 4 of 10
 Status: Ready to execute
 Last activity: 2026-10-02 — Phase 03 execution started
 
@@ -79,6 +79,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 02 P04 | 4 min | 3 tasks | 9 files |
 | Phase 03 P01 | 8 min | 2 tasks | 11 files |
 | Phase 03 P02 | 10min | 2 tasks | 16 files |
+| Phase 03 P03 | 9min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,8 @@ Progress: [███░░░░░░░] 29%
 - [Phase 02]: 02-04: LiveTickerService получает timesheet_service через конструктор, контракт live-ticker-no-adapters с пустым долгом, lint-imports 4 kept, 0 broken; Фаза 2 принята: гейт зелёный, 223 теста assistant-core
 - [Phase 03]: 03-01: эталоны 8 промптов D-08 (+debrief_call) закоммичены в assistant-core до правки src; тест снимает текст по месту вызова LLM через фейк и не импортирует константы промптов; методисту в тесте секретаря нужен свой фейк (иначе реальный genai.Client уходит в сеть), реальный клиент в тестах снимка запрещён autouse-фикстурой
 - [Phase 03]: 03-02: seed-CLI сначала проверяет файл персоны, потом открывает БД; chat-app читает персону только из таблиц (без PyYAML)
+- [Phase 03]: 03-03: task_areas и methodist обязательны в схеме персоны; правила restricted_nda и Telegram-плейсхолдеры проверяются валидаторами (fail-closed)
+- [Phase 03]: 03-03: единственное исключение shield для config/persona.yaml (3 находки), число известных находок 18 (OQ1), снимается правилом Фазы 4
 
 ### Pending Todos
 
@@ -134,6 +137,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-02T15:37:30.860Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-10-02T15:46:07.477Z
+Stopped at: Completed 03-03-PLAN.md
 Resume file: None
