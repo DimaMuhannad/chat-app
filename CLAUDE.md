@@ -44,6 +44,7 @@ This project is an advanced AI Agent IDE and Autonomous Assistant platform consi
   ```bash
   /opt/assistant-core/.venv/bin/python3 scripts/security_shield.py
   ```
+- **Run Quality Gate (both repos):** `python3 /opt/chat-app/scripts/gate.py` — оба pytest, import-linter, security_shield; exit 0 = «ЗЕЛЁНЫЙ»; см. docs/BASELINE.md
 - **Restart Services (if modified):**
   ```bash
   systemctl restart chat-app.service
