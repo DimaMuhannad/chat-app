@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Порты и домен без изменения поведения
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-10-02T09:51:34.207Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-10-02T09:56:11.562Z"
 last_activity: 2026-10-02
 last_activity_desc: Phase 02 execution started
-state_head: 1b3c3a8228588604e17fae7a2f058d48e526248b
+state_head: 9fe58adeade658953c6b10009627deeaa918bdb2
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 8
-  completed_plans: 5
+  completed_plans: 6
   percent: 14
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-02)
 ## Current Position
 
 Phase: 02 (Порты и домен без изменения поведения) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-10-02 — Phase 02 execution started
 
@@ -73,6 +73,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 01 P03 | 6 min | 2 tasks | 9 files |
 | Phase 01 P04 | 8 min | 3 tasks | 4 files |
 | Phase 02 P01 | 4 min | 2 tasks | 12 files |
+| Phase 02 P02 | 8 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,8 @@ Progress: [█░░░░░░░░░] 14%
 - [Phase 01]: Plan 01-04: владелец выбрал shield b-all-frozen (--all + замороженный список 15), 2026-10-02; красный на новой находке, сбое shield или устаревшей записи
 - [Phase 02]: Характеризация _get_tydex_context закоммичена до правки src; порт без дефолтов профиля (многоточие), адаптер пробрасывает *args/**kwargs
 - [Phase 02]: core-is-pure запрещает ядру все 13 прочих модулей верхнего уровня src; долг ignore_imports 5 -> 4
+- [Phase 02]: 02-02: все методы портов async; синхронный разбор payload парсера закрывает адаптер ScheduleParserSource
+- [Phase 02]: 02-02: BaseCalendarSink нейтрален к поставщику (event_id), REQUIRES_CONFIRMATION для submit_grade/delete_task только декларативна до Фазы 5, адаптер ЛК не подключён к боевым потокам
 
 ### Pending Todos
 
@@ -120,6 +123,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-02T09:51:33.996Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-10-02T09:56:11.362Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
