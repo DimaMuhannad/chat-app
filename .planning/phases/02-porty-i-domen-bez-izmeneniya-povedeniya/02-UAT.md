@@ -1,18 +1,14 @@
 ---
-status: testing
+status: complete
 phase: 02-porty-i-domen-bez-izmeneniya-povedeniya
 source: [02-VERIFICATION.md]
 started: 2026-10-02T10:30:00Z
-updated: 2026-10-02T10:30:00Z
+updated: 2026-10-02T11:00:00Z
 ---
 
 ## Current Test
 
-number: 5
-name: Живой запуск бота и демона после снятия остановки сервиса
-expected: |
-  После перезапуска assistant-worker бот отвечает как раньше.
-awaiting: user response
+[testing complete]
 
 ## Tests
 
@@ -34,14 +30,14 @@ result: passed (принято по поручению владельца 2026-1
 
 ### 5. Живой запуск бота и демона после снятия остановки сервиса
 expected: После ручного перезапуска assistant-worker (failed с 2026-10-01, до фазы) команды /today, живая сводка, секретарь с вопросом о табеле и синхронизация табеля с Google Drive отвечают как раньше (/timesheet падает с NameError, как и до фазы — известный дефект в backlog).
-result: [pending]
+result: passed (владелец вручную подтвердил работу бота после перезапуска; плюс имитационный прогон 21 команды на коде до и после фазы: различий 0, единственный отказ — /timesheet, дефект до фазы, в backlog)
 
 ## Summary
 
 total: 5
-passed: 4
+passed: 5
 issues: 0
-pending: 1
+pending: 0
 skipped: 0
 blocked: 0
 
