@@ -107,6 +107,42 @@ SHA взяты из заголовков `docs/baseline/pytest-chat-app.txt` и 
 - `test_security_audit_all` сканирует `git ls-files` обоих репозиториев (первые 100 файлов), поэтому новые файлы не должны содержать строк, похожих на секреты.
 - Решение владельца: в Фазе 1 локальные коммиты в assistant-core делаются прямо в ветку main этого репозитория (push не выполняется).
 
+## Архитектурный контракт и долг
+
+Инструмент: import-linter 2.15 (grimp 3.17). Конфиги `.importlinter` (INI) лежат в корне каждого репозитория; `pyproject.toml` не создавался. Гейт печатает строку «import-linter» для каждого репозитория.
+
+### assistant-core
+
+Два контракта типа `forbidden`, команда `lint-imports --no-logo --no-cache` из `/opt/assistant-core` даёт «2 kept, 0 broken».
+
+| Контракт | Источники | Запрещённые цели |
+|----------|-----------|------------------|
+| `brain-no-adapters` | `src.brain` | `src.connectors`, `src.calendar`, `src.parser`, `src.sender`, `src.collector`, `src.notifier` |
+| `bot-handler-no-adapters` | `src.notifier.bot_handler` | `src.connectors`, `src.calendar`, `src.parser`, `src.sender`, `src.collector` |
+
+Пять записей `ignore_imports` — известный долг, который только убывает (Фаза 2, PRT-04, опустошает список; запись удаляется в том же коммите, что и рефакторинг, иначе lint-imports сообщит об устаревшей записи). Тест `test_ignore_imports_debt_only_shrinks` не даёт числу записей превысить 5.
+
+| # | Источник → цель | Строки | Вид |
+|---|-----------------|--------|-----|
+| 1 | `src.brain.secretary_dialog` → `src.connectors.aadhk.parser` | 139 | inline |
+| 2 | `src.notifier.bot_handler` → `src.connectors.aadhk.parser` | 1052, 1095, 1144 | inline |
+| 3 | `src.notifier.bot_handler` → `src.connectors.gdrive.client` | 1143 | inline |
+| 4 | `src.notifier.bot_handler` → `src.connectors.guap_lms.client` | 23 | top-level |
+| 5 | `src.notifier.bot_handler` → `src.sender.email_sender` | 22 | top-level |
+
+Два из пяти нарушений — обычные импорты верхнего уровня, а не inline-импорты, как сказано в ROADMAP.
+
+Известное нарушение вне контракта: `src.notifier.live_ticker -> src.connectors.aadhk.parser` (строка 115, inline). Это связь «адаптер → адаптер»; контракт её не охватывает и в `ignore_imports` её нет. Только фиксируется; решение (расширять ли контракт на `live_ticker`) принимается в Фазе 2.
+
+Решения по настройке:
+
+- `allow_indirect_imports = True`: считаются только прямые импорты. Иначе цепочка `bot_handler -> live_ticker -> connectors` потребовала бы в Фазе 2 рефакторинга `live_ticker`, которого нет в PRT-04.
+- `root_packages = src, src.connectors, src.sender` (порции namespace-пакетов) вместо пустых `__init__.py`. Каталоги `src/connectors` и `src/sender` не содержат `__init__.py`, и без перечисления порций grimp их не видит: наивный контракт сообщает «KEPT» при реальных нарушениях. Продакшен-дерево в Фазе 1 не меняется (Open Question 2 решён по рекомендации исследования), а страж-тест `test_real_contract_modules_exist_in_graph` проверяет, что каждый модуль контракта есть в графе.
+- Два контракта вместо одного: общий запрет `src.notifier` ложно срабатывал бы на соседние модули бот-обработчика.
+- `src.main` — корень композиции, в контракт не входит.
+
+Тесты контракта (`tests/test_architecture_contract.py`, 5 штук): падение на синтетическом нарушении, успех на чистом пакете, страж «модули контракта есть в графе», верхняя граница долга, падение реального контракта на копии пакета с внедрённым запрещённым импортом.
+
 ## Правила
 
 1. 100% pytest в обоих репозиториях на каждом шаге; проверяется гейтом.

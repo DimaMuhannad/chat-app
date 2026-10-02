@@ -40,6 +40,7 @@ LIVE_DB = CORE_DIR / "data" / "assistant.db"
 CHAT_VENV_BIN = CHAT_DIR / "backend" / ".venv" / "bin"
 CORE_VENV_BIN = CORE_DIR / ".venv" / "bin"
 PYTEST_TIMEOUT_S = 900
+LINT_TIMEOUT_S = 300
 
 REPO_CHAT = "chat-app"
 REPO_CORE = "assistant-core"
@@ -244,6 +245,34 @@ def run_pytest_step(
     return CheckResult(repo, name, False, "\n".join(lines))
 
 
+def run_lint_imports_step(
+    repo: str,
+    lint_bin: Path,
+    cwd: Path,
+    env_extra: dict[str, str] | None,
+) -> CheckResult:
+    """Один запуск lint-imports (контракт .importlinter репозитория) -> CheckResult.
+
+    --no-cache: кэш import-linter не должен появляться в дереве репозитория.
+    """
+    name = "import-linter"
+    if not lint_bin.is_file():
+        return CheckResult(repo, name, False, "не установлен import-linter — см. requirements-dev.txt")
+    if not cwd.is_dir():
+        return CheckResult(repo, name, False, f"нет каталога репозитория: {cwd}")
+    try:
+        proc = run_cmd([str(lint_bin), "--no-logo", "--no-cache"], cwd, env_extra, timeout=LINT_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        return CheckResult(repo, name, False, "превышено время выполнения lint-imports")
+    if proc.returncode == 0:
+        return CheckResult(repo, name, True)
+    output = proc.stdout + "\n" + proc.stderr
+    lines = [line.strip() for line in output.splitlines() if "BROKEN" in line or "->" in line]
+    if not lines:
+        lines = [f"код возврата lint-imports: {proc.returncode}"]
+    return CheckResult(repo, name, False, "\n".join(lines[:10]))
+
+
 def db_unchanged_check(before: str | None, after: str | None) -> CheckResult:
     name = "боевая assistant.db не изменена"
     if before is None or after is None:
@@ -291,6 +320,13 @@ def _safe_pytest_step(repo: str, **kwargs) -> CheckResult:
         return CheckResult(repo, "pytest — тестов: 0", False, f"сбой шага: {_exc_text(exc)}")
 
 
+def _safe_lint_step(repo: str, **kwargs) -> CheckResult:
+    try:
+        return run_lint_imports_step(repo=repo, **kwargs)
+    except Exception as exc:  # неожиданный сбой шага - красная строка, не трассировка
+        return CheckResult(repo, "import-linter", False, f"сбой шага: {_exc_text(exc)}")
+
+
 def _run_all(save_dir: Path | None) -> list[CheckResult]:
     results: list[CheckResult] = []
     before = _sha_or_none(LIVE_DB)
@@ -318,6 +354,9 @@ def _run_all(save_dir: Path | None) -> list[CheckResult]:
         results.append(_safe_pytest_step(
             REPO_CORE, pytest_bin=CORE_VENV_BIN / "pytest", target=str(CORE_DIR / "tests"),
             cwd=CORE_DIR, env_extra=None, tmp_dir=tmp_dir, save_dir=save_dir,
+        ))
+        results.append(_safe_lint_step(
+            REPO_CORE, lint_bin=CORE_VENV_BIN / "lint-imports", cwd=CORE_DIR, env_extra=None,
         ))
         results.append(db_unchanged_check(before, _sha_or_none(LIVE_DB)))
     finally:
