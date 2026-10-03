@@ -1,13 +1,14 @@
 from contextlib import asynccontextmanager
 import logging
 import os
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.health import router as health_router
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.db import PersonaNotLoadedError
 
 logging.basicConfig(
     level=logging.INFO,
@@ -32,6 +33,12 @@ def create_app() -> FastAPI:
         redoc_url=f"{settings.API_V1_STR}/redoc",
         lifespan=lifespan,
     )
+
+    @app.exception_handler(PersonaNotLoadedError)
+    async def persona_not_loaded_handler(request: Request, exc: PersonaNotLoadedError):
+        return JSONResponse(
+            status_code=503, content={"detail": "Персона не загружена в базу данных"}
+        )
 
     # CORS
     app.add_middleware(

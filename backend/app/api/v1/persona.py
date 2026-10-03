@@ -20,6 +20,16 @@ def persona_public_view(config: dict[str, Any]) -> dict[str, Any]:
             key: {"name": org["name"]} for key, org in persona["organizations"].items()
         },
         "default_area": persona["default_area"],
+        "task_areas": [
+            {
+                "value": area["value"],
+                "label": area["label"],
+                "filter_label": area.get("filter_label") or area["label"],
+                "show_in_filter": bool(area.get("show_in_filter", True)),
+            }
+            for area in persona["task_areas"]
+        ],
+        "ui": {"texts": dict(persona["ui"]["texts"])},
     }
 
 

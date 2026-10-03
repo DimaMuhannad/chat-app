@@ -5,7 +5,7 @@ from typing import Optional, List, Any
 # --- Projects ---
 class ProjectBase(BaseModel):
     name: str
-    area: str = "ГУАП"
+    area: Optional[str] = None
     status: str = "active"
     target_date: Optional[str] = None
     key_result: Optional[str] = None
@@ -30,7 +30,7 @@ class TaskBase(BaseModel):
     title: str
     project_id: Optional[int] = None
     description: Optional[str] = None
-    area: str = "ГУАП"
+    area: Optional[str] = None
     priority: str = "P2"
     status: str = "todo"
     due_date: Optional[str] = None

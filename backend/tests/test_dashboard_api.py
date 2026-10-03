@@ -3,6 +3,13 @@ from httpx import ASGITransport, AsyncClient
 from app.main import app
 
 
+async def _persona_default_area(client) -> str:
+    """Область по умолчанию текущей персоны - из публичного API, а не литералом (D-11, D-17)."""
+    resp = await client.get("/api/v1/persona/current")
+    assert resp.status_code == 200
+    return resp.json()["default_area"]
+
+
 @pytest.mark.anyio
 async def test_dashboard_summary():
     transport = ASGITransport(app=app)
@@ -44,16 +51,18 @@ async def test_projects_crud():
 async def test_tasks_crud():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
+        default_area = await _persona_default_area(client)
         # 1. Create task
         res = await client.post("/api/v1/tasks", json={
             "title": "Срочная проверка расписания",
-            "area": "ГУАП",
+            "area": default_area,
             "priority": "P1"
         })
         assert res.status_code == 201
         task = res.json()
         assert task["title"] == "Срочная проверка расписания"
         assert task["priority"] == "P1"
+        assert task["area"] == default_area
 
         # 2. Update status
         patch_res = await client.patch(f"/api/v1/tasks/{task['id']}/status", json={"status": "done"})
@@ -62,6 +71,50 @@ async def test_tasks_crud():
 
         # 3. Clean up
         await client.delete(f"/api/v1/tasks/{task['id']}")
+
+
+@pytest.mark.anyio
+async def test_task_without_area_gets_persona_default_area():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        default_area = await _persona_default_area(client)
+        created_ids = []
+        try:
+            # поле отсутствует
+            res = await client.post("/api/v1/tasks", json={"title": "Без области (нет поля)"})
+            assert res.status_code == 201
+            created_ids.append(res.json()["id"])
+            assert res.json()["area"] == default_area
+
+            # пустая строка
+            res = await client.post("/api/v1/tasks", json={"title": "Без области (пусто)", "area": ""})
+            assert res.status_code == 201
+            created_ids.append(res.json()["id"])
+            assert res.json()["area"] == default_area
+        finally:
+            for task_id in created_ids:
+                await client.delete(f"/api/v1/tasks/{task_id}")
+
+
+@pytest.mark.anyio
+async def test_project_without_area_gets_persona_default_area():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        default_area = await _persona_default_area(client)
+        created_ids = []
+        try:
+            res = await client.post("/api/v1/projects", json={"name": "Проект без области"})
+            assert res.status_code == 201
+            created_ids.append(res.json()["id"])
+            assert res.json()["area"] == default_area
+
+            res = await client.post("/api/v1/projects", json={"name": "Проект с пустой областью", "area": ""})
+            assert res.status_code == 201
+            created_ids.append(res.json()["id"])
+            assert res.json()["area"] == default_area
+        finally:
+            for project_id in created_ids:
+                await client.delete(f"/api/v1/projects/{project_id}")
 
 
 @pytest.mark.anyio

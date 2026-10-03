@@ -15,7 +15,19 @@ async def get_db() -> AsyncGenerator[aiosqlite.Connection, None]:
         yield conn
 
 
+class PersonaNotLoadedError(RuntimeError):
+    """Персона settings.PERSONA_ID не загружена в БД; HTTP-слой отвечает 503 (D-11, T-03-20)."""
+
+
 class DatabaseService:
+    @staticmethod
+    async def resolve_default_area() -> str:
+        """Область по умолчанию текущей персоны; без персоны - PersonaNotLoadedError (не строка владельца)."""
+        row = await DatabaseService.get_persona(settings.PERSONA_ID)
+        if row is None:
+            raise PersonaNotLoadedError(settings.PERSONA_ID)
+        return row["config"]["default_area"]
+
     @staticmethod
     async def get_persona(persona_id: str) -> dict[str, Any] | None:
         """Персона из таблицы personas; None, если строки или самой таблицы нет."""
@@ -181,6 +193,7 @@ class DatabaseService:
     @staticmethod
     async def create_project(data: dict[str, Any]) -> dict[str, Any]:
         now_iso = datetime.now(timezone.utc).isoformat()
+        area = data.get("area") or await DatabaseService.resolve_default_area()
         async with get_db() as conn:
             cursor = await conn.execute(
                 """
@@ -189,7 +202,7 @@ class DatabaseService:
                 """,
                 (
                     data["name"],
-                    data.get("area", "ГУАП"),
+                    area,
                     data.get("status", "active"),
                     data.get("target_date"),
                     data.get("key_result"),
@@ -274,6 +287,7 @@ class DatabaseService:
     @staticmethod
     async def create_task(data: dict[str, Any]) -> dict[str, Any]:
         now_iso = datetime.now(timezone.utc).isoformat()
+        area = data.get("area") or await DatabaseService.resolve_default_area()
         async with get_db() as conn:
             cursor = await conn.execute(
                 """
@@ -284,7 +298,7 @@ class DatabaseService:
                     data.get("project_id"),
                     data["title"],
                     data.get("description"),
-                    data.get("area", "ГУАП"),
+                    area,
                     data.get("priority", "P2"),
                     data.get("status", "todo"),
                     data.get("due_date"),
