@@ -222,3 +222,10 @@ model_sources:
 3. Скопировать полную каноническую структуру словаря персоны в фикстуру `conftest.py`.
 4. В `scripts/gate.py:388` запускать `security_shield.py` через интерпретатор виртуального окружения (`CHAT_VENV_BIN / "python"`), а не `sys.executable`.
 5. В pre-commit хуке предусмотреть перебор путей к `.venv/bin/python` перед откатом на системный `python3`.
+
+### Actionable Resolutions Applied in Plans (Phase 4 Re-planning Complete)
+- [x] **04-01 (Мигратор и `:memory:`):** Сигнатура `run_migrations` расширена для поддержки открытого соединения (`self._shared_conn`), атомарность оформлена через `BEGIN IMMEDIATE`, установка пакета `assistant-shared` реализована через `.pth`-ссылку без зависимости от отсутствующего `setuptools`.
+- [x] **04-02 (Фикстура персоны и DAT-03):** В `conftest.py` зафиксирована полная каноническая схема `PersonaConfig.model_dump(mode="json")` (исключая `AttributeError` в `persona_tokens.py`), тест `test_concurrent_write.py` охватывает запись во все 4 таблицы под `foreign_keys = ON`, в `config.py` применён `Field` с `AliasChoices`.
+- [x] **04-03 (Запуск в gate.py и паритет):** В `scripts/gate.py:388` запуск `security_shield.py` переведён на `CHAT_VENV_BIN / "python"` / `CORE_VENV_BIN / "python"`, в тонкую обёртку добавлен автономный поиск `sys.path`.
+- [x] **04-04 (Pre-commit hook в тестах):** В `.githooks/pre-commit` внедрён перебор путей поиска Python перед системным `python3`, в `test_pre_commit_hook.py` обеспечено копирование `scripts/security_shield.py` и передача `VIRTUAL_ENV`.
+
