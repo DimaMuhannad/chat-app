@@ -31,7 +31,10 @@ async def get_task(task_id: int):
 
 @router.put("/{task_id}")
 async def update_task(task_id: int, data: TaskUpdate):
-    updated = await DatabaseService.update_task(task_id, data.model_dump(exclude_unset=True))
+    changes = data.model_dump(exclude_unset=True)
+    if not changes.get("area"):
+        changes.pop("area", None)  # пустая область не должна затирать существующую
+    updated = await DatabaseService.update_task(task_id, changes)
     if not updated:
         raise HTTPException(status_code=404, detail="Task not found")
     return updated

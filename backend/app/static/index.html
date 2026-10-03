@@ -986,7 +986,12 @@
       document.getElementById('modal-task-id').value = t.id;
       document.getElementById('modal-task-title-header').innerText = 'Редактировать задачу #' + t.id;
       document.getElementById('modal-task-title').value = t.title || '';
-      document.getElementById('modal-task-area').value = t.area || PERSONA_DEFAULT_AREA;
+      const areaSelect = document.getElementById('modal-task-area');
+      const taskArea = t.area || PERSONA_DEFAULT_AREA;
+      if (taskArea && ![...areaSelect.options].some(o => o.value === taskArea)) {
+        areaSelect.add(new Option(taskArea, taskArea));
+      }
+      areaSelect.value = taskArea;
       document.getElementById('modal-task-priority').value = t.priority || 'P2';
       document.getElementById('modal-task-due').value = t.due_date || '';
       document.getElementById('modal-task-desc').value = t.description || '';
@@ -1006,12 +1011,14 @@
 
       const payload = {
         title: title,
-        area: document.getElementById('modal-task-area').value,
         priority: document.getElementById('modal-task-priority').value,
         due_date: document.getElementById('modal-task-due').value || null,
         description: document.getElementById('modal-task-desc').value.trim() || null,
         project_id: document.getElementById('modal-task-project').value ? parseInt(document.getElementById('modal-task-project').value) : null
       };
+
+      const areaValue = document.getElementById('modal-task-area').value;
+      if (areaValue) payload.area = areaValue;
 
       if (id) {
         await fetch(`${API_BASE}/tasks/${id}`, {
