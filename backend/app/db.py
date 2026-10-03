@@ -5,13 +5,12 @@ from typing import Any, AsyncGenerator
 from contextlib import asynccontextmanager
 
 from app.core.config import settings
+from assistant_shared.db.connection import get_async_connection
 
 
 @asynccontextmanager
 async def get_db() -> AsyncGenerator[aiosqlite.Connection, None]:
-    async with aiosqlite.connect(settings.SQLITE_DB_PATH) as conn:
-        conn.row_factory = aiosqlite.Row
-        await conn.execute("PRAGMA foreign_keys = ON;")
+    async with get_async_connection(settings.SQLITE_DB_PATH) as conn:
         yield conn
 
 
