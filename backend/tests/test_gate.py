@@ -181,6 +181,31 @@ def test_persona_drift_check_missing_file_is_red_without_exception(tmp_path):
     assert "нет файла" in result.detail
 
 
+def test_persona_drift_check_uses_given_name(tmp_path):
+    a = tmp_path / "a.py"
+    b = tmp_path / "b.py"
+    a.write_bytes(b"x = 1\n")
+    b.write_bytes(b"x = 2\n")
+    named = "токены персоны (дрейф SHA-256)"
+    assert gate.persona_drift_check(a, a, name=named).name == named
+    red = gate.persona_drift_check(a, b, name=named)
+    assert red.name == named and red.ok is False
+    # имя по умолчанию не изменилось
+    assert gate.persona_drift_check(a, a).name == "синтетическая персона (дрейф SHA-256)"
+
+
+def test_gate_checks_persona_tokens_pair():
+    assert gate.CHAT_TOKENS == gate.CHAT_DIR / "backend" / "tests" / "persona_tokens.py"
+    assert gate.CORE_TOKENS == gate.CORE_DIR / "tests" / "persona_tokens.py"
+    assert gate.CHAT_TOKENS.is_file() and gate.CORE_TOKENS.is_file()
+    source = " ".join(Path(gate.__file__).read_text(encoding="utf-8").split())
+    assert "persona_drift_check(CHAT_PERSONA, CORE_PERSONA)" in source
+    assert (
+        'persona_drift_check(CHAT_TOKENS, CORE_TOKENS, name="токены персоны (дрейф SHA-256)")'
+        in source
+    )
+
+
 # --- security_shield: разбор и сверка находок (синтетический вывод) ---
 
 _SYNTH_HEADER = (

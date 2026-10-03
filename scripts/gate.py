@@ -46,6 +46,8 @@ CHAT_VENV_BIN = CHAT_DIR / "backend" / ".venv" / "bin"
 CORE_VENV_BIN = CORE_DIR / ".venv" / "bin"
 CHAT_PERSONA = CHAT_DIR / "backend" / "tests" / "synthetic_persona.py"
 CORE_PERSONA = CORE_DIR / "tests" / "synthetic_persona.py"
+CHAT_TOKENS = CHAT_DIR / "backend" / "tests" / "persona_tokens.py"
+CORE_TOKENS = CORE_DIR / "tests" / "persona_tokens.py"
 PYTEST_TIMEOUT_S = 900
 LINT_TIMEOUT_S = 300
 SHIELD_TIMEOUT_S = 300
@@ -415,9 +417,18 @@ def db_unchanged_check(before: str | None, after: str | None) -> CheckResult:
     return CheckResult(REPO_BOTH, name, True)
 
 
-def persona_drift_check(chat_copy: Path, core_copy: Path) -> CheckResult:
-    """Две копии synthetic_persona.py (chat-app и assistant-core) должны совпадать по SHA-256."""
-    name = "синтетическая персона (дрейф SHA-256)"
+def _rel_to(path: Path, base: Path) -> str:
+    """Путь относительно корня репозитория; вне него - как есть."""
+    try:
+        return str(path.relative_to(base))
+    except ValueError:
+        return str(path)
+
+
+def persona_drift_check(
+    chat_copy: Path, core_copy: Path, name: str = "синтетическая персона (дрейф SHA-256)"
+) -> CheckResult:
+    """Две копии общего тестового файла (chat-app и assistant-core) должны совпадать по SHA-256."""
     for path in (chat_copy, core_copy):
         if not path.is_file():
             return CheckResult(REPO_BOTH, name, False, f"нет файла: {path}")
@@ -428,8 +439,8 @@ def persona_drift_check(chat_copy: Path, core_copy: Path) -> CheckResult:
     if not same:
         return CheckResult(
             REPO_BOTH, name, False,
-            "копии различаются — синхронизируйте backend/tests/synthetic_persona.py "
-            "и tests/synthetic_persona.py в assistant-core",
+            f"копии различаются — синхронизируйте {_rel_to(chat_copy, CHAT_DIR)} "
+            f"и {_rel_to(core_copy, CORE_DIR)} в assistant-core",
         )
     return CheckResult(REPO_BOTH, name, True)
 
@@ -525,6 +536,9 @@ def _run_all(save_dir: Path | None) -> list[CheckResult]:
         results.append(_safe_shield_step(REPO_CHAT, CHAT_DIR))
         results.append(_safe_shield_step(REPO_CORE, CORE_DIR))
         results.append(persona_drift_check(CHAT_PERSONA, CORE_PERSONA))
+        results.append(
+            persona_drift_check(CHAT_TOKENS, CORE_TOKENS, name="токены персоны (дрейф SHA-256)")
+        )
         results.append(db_unchanged_check(before, _sha_or_none(LIVE_DB)))
     finally:
         # В каталоге копия боевой БД и архив test_gdrive_client с копией секретов.
