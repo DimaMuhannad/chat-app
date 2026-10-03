@@ -22,9 +22,14 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from httpx import ASGITransport, AsyncClient
 
 from app.api.v1 import security
 from app.core.config import settings
+from app.db import DatabaseService
+from app.main import app
+
+from .synthetic_persona import SYNTHETIC_PERSONA
 
 SHIELD_PATH = Path(__file__).resolve().parents[2] / "scripts" / "security_shield.py"
 GENERIC_BEARER = "Generic Bearer Secret"
@@ -86,7 +91,8 @@ OTHER_REMOTE = "https://git.synthetic.example/other/repo.git"
 
 # --- адаптер к API security.py: единственное место, меняемое при переходе на данные ---
 def _audit(path: Path, nda: bool) -> dict:
-    return security.audit_path(path, is_tydex=nda)
+    rule = security.nda_rule_for(_owner_nda_workspace()) if nda else None
+    return security.audit_path(path, nda_rule=rule)
 # --- конец адаптера ---
 
 
@@ -341,3 +347,92 @@ def test_p03_shield_copies_identical():
     mine = hashlib.sha256(SHIELD_PATH.read_bytes()).hexdigest()
     theirs = hashlib.sha256(other.read_bytes()).hexdigest()
     assert mine == theirs
+
+
+# --------------------------- правила из данных: D01, D02, 503 ---------------------------
+
+
+def _synthetic_ids() -> list[str]:
+    return [ws["id"] for ws in SYNTHETIC_PERSONA["workspaces"]]
+
+
+@pytest.mark.anyio
+async def test_d01_owner_rules_come_from_data():
+    rows = await DatabaseService.list_workspaces(settings.PERSONA_ID)
+    assert len(rows) == 4
+    owner = _owner_nda_workspace()
+    rule = security.nda_rule_for(owner)
+    assert rule is not None
+    assert set(rule.forbidden_remote_substrings) == set(owner["forbidden_remote_substrings"])
+    assert len(rule.forbidden_remote_substrings) == len(owner["forbidden_remote_substrings"])
+    same_message = rule.violation_message == (owner["remote_violation_message"] or security.DEFAULT_REMOTE_VIOLATION)
+    assert same_message
+    # признак NDA - допуск пространства: у остальных пространств правила нет
+    for row in rows:
+        has_rule = security.nda_rule_for(row) is not None
+        assert has_rule == (row["clearance"] == "restricted_nda")
+
+
+@pytest.mark.anyio
+async def test_d02_synthetic_overview_lists_its_workspaces(monkeypatch):
+    monkeypatch.setattr(settings, "PERSONA_ID", SYNTHETIC_PERSONA["id"])
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/api/v1/security/overview")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total_projects"] == 3
+    assert [p["id"] for p in data["projects"]] == _synthetic_ids()
+    assert all(p["audit_status"] == "virtual_airgap" for p in data["projects"])
+    assert {p["clearance"] for p in data["projects"]} == {"public", "internal", "restricted_nda"}
+
+
+@pytest.mark.anyio
+async def test_d02_synthetic_rule_applies_only_its_data(tmp_path):
+    # PERSONA_ID не подменяется: правила владельца берутся из его данных, синтетические - по явному id
+    rows = await DatabaseService.list_workspaces(SYNTHETIC_PERSONA["id"])
+    nda_rows = [r for r in rows if r["clearance"] == "restricted_nda"]
+    assert len(nda_rows) == 1
+    synthetic_ws = nda_rows[0]
+    rule = security.nda_rule_for(synthetic_ws)
+    assert rule is not None
+    assert synthetic_ws["forbidden_remote_substrings"]
+    own_remote = "https://" + synthetic_ws["forbidden_remote_substrings"][0] + "/x.git"
+
+    # правило синтетической персоны ловит её подстроку и даёт её сообщение
+    own_repo = make_repo(tmp_path / "own", own_remote, {"README.txt": "synthetic\n"})
+    res = security.audit_path(own_repo, nda_rule=rule)
+    count = len(res["violations"])
+    message_ok = res["violations"][0] == rule.violation_message
+    assert count == 1
+    assert message_ok
+
+    # подстрока владельца для синтетического правила не нарушение
+    owner_repo = make_repo(tmp_path / "owner", _owner_remote(), {"README.txt": "synthetic\n"})
+    assert security.audit_path(owner_repo, nda_rule=rule)["violations"] == []
+
+    # правило владельца не действует на подстроку синтетической персоны
+    owner_rule = security.nda_rule_for(_owner_nda_workspace())
+    assert security.audit_path(own_repo, nda_rule=owner_rule)["violations"] == []
+
+    # в сообщении синтетического правила нет названий организаций владельца
+    row = await DatabaseService.get_persona("popov-da-default")
+    config = row["config"].get("persona", row["config"])
+    names: list[str] = []
+    for org in config["organizations"].values():
+        names.append(org["name"])
+        names.extend(org.get("aliases") or [])
+    low = rule.violation_message.casefold()
+    leaked = any(len(n) >= 3 and n.casefold() in low for n in names)
+    assert not leaked
+
+
+@pytest.mark.anyio
+async def test_overview_and_audit_503_without_workspaces(monkeypatch):
+    monkeypatch.setattr(settings, "PERSONA_ID", "net-takoy-persony")
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        overview = await client.get("/api/v1/security/overview")
+        audit = await client.post("/api/v1/security/audit", json={})
+        single = await client.post("/api/v1/security/audit", json={"project_id": "chat-app"})
+    assert overview.status_code == 503
+    assert audit.status_code == 503
+    assert single.status_code == 503

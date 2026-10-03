@@ -2,10 +2,14 @@ import os
 import re
 import subprocess
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
+
+from app.core.config import settings
+from app.db import DatabaseService
 
 router = APIRouter(prefix="/security", tags=["Security Shield"])
 
@@ -28,44 +32,34 @@ FORBIDDEN_FILES: list[re.Pattern] = [
     re.compile(r".+\.(pem|key|pkcs12|pfx)$"),
 ]
 
-PROJECTS_REGISTRY = [
-    {
-        "id": "chat-app",
-        "name": "🤖 Antigravity Web Studio (chat-app)",
-        "path": "/opt/chat-app",
-        "account": "DimaMuhannad (Personal / Academic)",
-        "clearance": "public",
-        "clearance_label": "🌐 Public / Open Source",
-        "color": "blue",
-    },
-    {
-        "id": "assistant-core",
-        "name": "⚙️ Assistant Core Daemon",
-        "path": "/opt/assistant-core",
-        "account": "DimaMuhannad (Personal / Academic)",
-        "clearance": "public",
-        "clearance_label": "🌐 Public / Academic",
-        "color": "green",
-    },
-    {
-        "id": "tydex-optics",
-        "name": "🔬 Оптические приборы и измерения (ООО «Тидекс»)",
-        "path": "/opt/work-tydex",
-        "account": "ООО «Тидекс» (Corporate Organization)",
-        "clearance": "restricted_nda",
-        "clearance_label": "🔴 Restricted NDA / Air-gap",
-        "color": "red",
-    },
-    {
-        "id": "guap-physics",
-        "name": "🏛️ Кафедра физики ГУАП (Лабораторные и LMS)",
-        "path": "/opt/personal/guap-physics",
-        "account": "DimaMuhannad (ГУАП)",
-        "clearance": "internal",
-        "clearance_label": "🟡 Internal Academic",
-        "color": "yellow",
-    },
-]
+# Нейтральное сообщение, если у NDA-пространства не задан свой текст нарушения (без названий организаций).
+DEFAULT_REMOTE_VIOLATION = "CRITICAL: remote рабочего пространства указывает на запрещённый аккаунт!"
+
+
+@dataclass(frozen=True)
+class NdaRemoteRule:
+    """Правило remote для NDA-пространства: запрещённые подстроки origin и текст нарушения (данные пространства)."""
+
+    forbidden_remote_substrings: tuple[str, ...]
+    violation_message: str
+
+
+def nda_rule_for(ws: dict[str, Any]) -> NdaRemoteRule | None:
+    """Правило NDA только для пространства с допуском restricted_nda (признак - допуск, не id и не префикс)."""
+    if ws.get("clearance") != "restricted_nda":
+        return None
+    return NdaRemoteRule(
+        forbidden_remote_substrings=tuple(ws.get("forbidden_remote_substrings") or ()),
+        violation_message=ws.get("remote_violation_message") or DEFAULT_REMOTE_VIOLATION,
+    )
+
+
+async def _persona_workspaces() -> list[dict[str, Any]]:
+    """Пространства персоны из БД; пусто - 503 (fail-closed: не «0 проектов, чисто»)."""
+    workspaces = await DatabaseService.list_workspaces(settings.PERSONA_ID)
+    if not workspaces:
+        raise HTTPException(status_code=503, detail="Рабочие пространства персоны не загружены в базу данных")
+    return workspaces
 
 
 def run_cmd(cmd: list[str], cwd: str | None = None) -> tuple[int, str]:
@@ -76,7 +70,7 @@ def run_cmd(cmd: list[str], cwd: str | None = None) -> tuple[int, str]:
         return 1, str(e)
 
 
-def audit_path(target_path: Path, is_tydex: bool = False) -> dict[str, Any]:
+def audit_path(target_path: Path, nda_rule: NdaRemoteRule | None = None) -> dict[str, Any]:
     if not target_path.exists():
         return {
             "exists": False,
@@ -92,8 +86,8 @@ def audit_path(target_path: Path, is_tydex: bool = False) -> dict[str, Any]:
     code_user, user_email = run_cmd(["git", "config", "user.email"], cwd=str(target_path))
 
     violations = []
-    if is_tydex and code == 0 and "github.com/DimaMuhannad" in origin_url:
-        violations.append("CRITICAL: Проект Тидекс скомпрометирован: remote указывает на личный публичный аккаунт!")
+    if nda_rule is not None and code == 0 and any(s in origin_url for s in nda_rule.forbidden_remote_substrings):
+        violations.append(nda_rule.violation_message)
 
     # Scan tracked and modified files
     code_files, out_files = run_cmd(["git", "ls-files"], cwd=str(target_path))
@@ -132,18 +126,18 @@ class AuditRequest(BaseModel):
 @router.get("/overview")
 async def get_security_overview():
     """Returns status of Security Shield, clearance levels, and Air-Gap guardrails."""
+    workspaces = await _persona_workspaces()
     overview = []
     total_violations = 0
 
-    for p in PROJECTS_REGISTRY:
+    for p in workspaces:
         p_path = Path(p["path"])
-        is_tydex = p["clearance"] == "restricted_nda"
-        res = audit_path(p_path, is_tydex=is_tydex)
+        res = audit_path(p_path, nda_rule=nda_rule_for(p))
         total_violations += len(res.get("violations", []))
 
         overview.append({
             "id": p["id"],
-            "name": p["name"],
+            "name": p["label"],
             "account": p["account"],
             "clearance": p["clearance"],
             "clearance_label": p["clearance_label"],
@@ -160,7 +154,7 @@ async def get_security_overview():
         "status": "clean" if total_violations == 0 else "alert",
         "shield_active": True,
         "air_gap_enforced": True,
-        "total_projects": len(PROJECTS_REGISTRY),
+        "total_projects": len(workspaces),
         "total_violations": total_violations,
         "projects": overview,
         "last_checked": time.strftime("%Y-%m-%d %H:%M:%S MSK"),
@@ -173,15 +167,15 @@ async def run_security_audit(req: AuditRequest):
     start_time = time.time()
     results = []
 
-    target_projects = [p for p in PROJECTS_REGISTRY if p["id"] == req.project_id] if req.project_id else PROJECTS_REGISTRY
+    workspaces = await _persona_workspaces()
+    target_projects = [p for p in workspaces if p["id"] == req.project_id] if req.project_id else workspaces
 
     for p in target_projects:
         p_path = Path(p["path"])
-        is_tydex = p["clearance"] == "restricted_nda"
-        res = audit_path(p_path, is_tydex=is_tydex)
+        res = audit_path(p_path, nda_rule=nda_rule_for(p))
         results.append({
             "project_id": p["id"],
-            "project_name": p["name"],
+            "project_name": p["label"],
             "clearance_label": p["clearance_label"],
             "data": res,
         })

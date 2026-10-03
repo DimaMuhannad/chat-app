@@ -38,6 +38,28 @@ class DatabaseService:
         }
 
     @staticmethod
+    async def list_workspaces(persona_id: str) -> list[dict[str, Any]]:
+        """Рабочие пространства персоны в порядке position; пусто, если строк или таблицы нет."""
+        try:
+            async with get_db() as conn:
+                cursor = await conn.execute(
+                    "SELECT id, position, label, path, clearance, account, clearance_label, color, remote, "
+                    "forbidden_remote_substrings, forbidden_keywords, remote_violation_message "
+                    "FROM workspaces WHERE persona_id = ? ORDER BY position;",
+                    (persona_id,),
+                )
+                rows = await cursor.fetchall()
+        except aiosqlite.OperationalError:
+            return []
+        result: list[dict[str, Any]] = []
+        for row in rows:
+            item = dict(row)
+            item["forbidden_remote_substrings"] = json.loads(item["forbidden_remote_substrings"] or "[]")
+            item["forbidden_keywords"] = json.loads(item["forbidden_keywords"] or "[]")
+            result.append(item)
+        return result
+
+    @staticmethod
     async def get_dashboard_summary() -> dict[str, Any]:
         async with get_db() as conn:
             # 1. Focus P1 tasks
