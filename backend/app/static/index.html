@@ -793,7 +793,7 @@
                   <div class="flex items-center space-x-2 mt-1.5 text-[11px] text-slate-400">
                     <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/30">P1</span>
                     <span>${t.project_name ? escapeHtml(t.project_name) : escapeHtml(t.area)}</span>
-                    ${t.due_date ? `<span class="text-amber-400">📅 Срок: ${t.due_date}</span>` : ''}
+                    ${t.due_date ? `<span class="text-amber-400">📅 Срок: ${escapeHtml(t.due_date)}</span>` : ''}
                   </div>
                 </div>
               </div>
@@ -817,7 +817,7 @@
                   <div class="text-xs font-medium text-slate-200">${escapeHtml(r.what)}</div>
                   <div class="flex items-center space-x-2 mt-1 text-[11px] text-slate-400">
                     ${r.person ? `<span class="text-blue-400 font-medium">👤 ${escapeHtml(r.person)}</span>` : ''}
-                    ${r.check_date ? `<span class="text-amber-400">⏰ Проверить к: ${r.check_date}</span>` : ''}
+                    ${r.check_date ? `<span class="text-amber-400">⏰ Проверить к: ${escapeHtml(r.check_date)}</span>` : ''}
                     ${r.context ? `<span class="text-slate-500">• ${escapeHtml(r.context)}</span>` : ''}
                   </div>
                 </div>
@@ -925,7 +925,7 @@
       return `
         <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-700/80 shadow hover:border-slate-600 transition group space-y-2">
           <div class="flex items-start justify-between gap-2">
-            <span class="text-xs font-semibold px-2 py-0.5 rounded border ${prioColor}">${t.priority}</span>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded border ${prioColor}">${escapeHtml(t.priority)}</span>
             <div class="flex items-center space-x-1 opacity-80 group-hover:opacity-100 transition">
               <button onclick="editTask(${t.id})" class="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
               <button onclick="deleteTask(${t.id})" class="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-slate-800"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
@@ -935,7 +935,7 @@
           ${t.description ? `<div class="text-[11px] text-slate-400 line-clamp-2">${escapeHtml(t.description)}</div>` : ''}
           <div class="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800">
             <span class="truncate max-w-[130px]">${t.project_name ? escapeHtml(t.project_name) : escapeHtml(t.area)}</span>
-            ${t.due_date ? `<span class="text-amber-400">📅 ${t.due_date}</span>` : ''}
+            ${t.due_date ? `<span class="text-amber-400">📅 ${escapeHtml(t.due_date)}</span>` : ''}
           </div>
           <!-- Status Move Actions -->
           <div class="flex items-center justify-end space-x-1 pt-1">
@@ -1064,7 +1064,7 @@
               ${r.person ? `<span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-medium">${escapeHtml(r.person)}</span>` : '—'}
             </td>
             <td class="p-3.5 text-amber-400 font-medium">
-              ${r.check_date ? r.check_date : '—'}
+              ${r.check_date ? escapeHtml(r.check_date) : '—'}
             </td>
             <td class="p-3.5 text-slate-400">
               ${escapeHtml(r.context || '—')}
@@ -1297,7 +1297,7 @@
                 <td class="p-3 font-mono text-[11px] text-slate-400 truncate max-w-xs" title="${escapeHtml(p.origin_url)}">${escapeHtml(p.origin_url || 'None')}</td>
                 <td class="p-3">${statusBadge}</td>
                 <td class="p-3 text-right">
-                  <button onclick="runSecurityAudit('${p.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white rounded text-[11px] font-medium transition">
+                  <button data-project-id="${escapeHtml(p.id)}" onclick="runSecurityAudit(this.dataset.projectId)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white rounded text-[11px] font-medium transition">
                     Аудит
                   </button>
                 </td>
