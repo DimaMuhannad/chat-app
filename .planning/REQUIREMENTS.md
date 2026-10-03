@@ -46,11 +46,11 @@
 - [x] **PER-04** [chat-app + assistant-core]: NDA-правила (`forbidden_remote_substrings`, `forbidden_keywords`, `clearance`) — данные рабочего пространства; признак `is_tydex` по id/префиксу заменён на `clearance`. Три уровня допуска (W4): public и internal — секреты и запрещённые файлы; restricted_nda — дополнительно remote, запрещённые слова и запрет отправки содержимого в LLM. Тест эквивалентности (W3): явный чек-лист всех сегодняшних NDA-проверок (`security.py` и обе копии `security_shield.py`), каждая воспроизводится из данных без ослабления блокировки.
 - [x] **PER-05** [chat-app]: Дефолты области 'ГУАП' (`db.py`, `dashboard_schemas.py`) и ФИО/титул/'ГУАП'/'Тидекс' в статике `index.html` заменены данными персоны; веб-интерфейс получает их из `/api/v1/persona/current` (white-label).
 - [ ] **PER-06** [assistant-core]: Параметры коннекторов, зашитые в код ('Тидекс' как `default_project`, норма 8.5 ч/день, короткие названия предметов и слоты расписания, адреса сайта расписания и личного кабинета, каталог методических файлов), читаются из персоны/`connector_bindings`; точный перечень — по результатам аудита в plan-phase 3.
-- [ ] **PER-07** [assistant-core]: Системные промпты секретаря, маршрутизатора и методиста вынесены в Jinja2-шаблоны. Пререквизит (W10): до переноса сохранён точный текст всех промптов; тест рендерит шаблоны с персоной по умолчанию и сравнивает с сохранённым текстом символ в символ. Golden-набор ответов LLM не требуется.
+- [x] **PER-07** [assistant-core]: Системные промпты секретаря, маршрутизатора и методиста вынесены в Jinja2-шаблоны. Пререквизит (W10): до переноса сохранён точный текст всех промптов; тест рендерит шаблоны с персоной по умолчанию и сравнивает с сохранённым текстом символ в символ. Golden-набор ответов LLM не требуется.
 - [ ] **PER-08** [chat-app + assistant-core]: Тест-сканер хардкода профиля: ищет токены профиля (ГУАП/GUAP, Тидекс/Tydex, ФИО, персональные пути, аккаунты) в коде обоих репозиториев вне явного allowlist (файлы данных персоны, фикстуры тестов, docs). В Фазе 3 фиксируется baseline-allowlist (остаточный долг), который не может расти.
 - [ ] **PER-09** [chat-app + assistant-core]: Тест `test_persona_config.py`: вторая синтетическая персона на тех же кодовых путях даёт промпты, список рабочих пространств, дефолты и scope-решения, отличные от персоны по умолчанию; персона по умолчанию загружается без `PERSONA_CONFIG_PATH`.
-- [ ] **BCK-01** [chat-app + assistant-core]: Персона `popov-da-default` воспроизводит текущее поведение 1:1 — меняется только место хранения (код → данные); поведение в проде не меняется до явного переключения персоны.
-- [ ] **BCK-02** [chat-app + assistant-core]: Тесты, проверяющие хардкод напрямую (например `test_search_local_files_catalog`, `test_fast_intent_router.py`, `test_security_api.py`), переписаны на проверку того же поведения через загруженную персону по умолчанию — не удалены и не ослаблены. Чистые safety/correctness-тесты (`test_hitl_safety_guardrails.py`, `test_bot_group_isolation.py`, `test_phase1.py`, `test_phase2_filter.py`, `test_key_rotator.py`, `test_voice.py`, parsing-тесты AADHk) меняются только фикстурами персоны.
+- [x] **BCK-01** [chat-app + assistant-core]: Персона `popov-da-default` воспроизводит текущее поведение 1:1 — меняется только место хранения (код → данные); поведение в проде не меняется до явного переключения персоны.
+- [x] **BCK-02** [chat-app + assistant-core]: Тесты, проверяющие хардкод напрямую (например `test_search_local_files_catalog`, `test_fast_intent_router.py`, `test_security_api.py`), переписаны на проверку того же поведения через загруженную персону по умолчанию — не удалены и не ослаблены. Чистые safety/correctness-тесты (`test_hitl_safety_guardrails.py`, `test_bot_group_isolation.py`, `test_phase1.py`, `test_phase2_filter.py`, `test_key_rotator.py`, `test_voice.py`, parsing-тесты AADHk) меняются только фикстурами персоны.
 
 ### База данных и безопасность (DAT, SEC) — Фаза 4
 
@@ -156,11 +156,11 @@
 | PER-04 | Phase 3 | Complete |
 | PER-05 | Phase 3 | Complete |
 | PER-06 | Phase 3 | Pending |
-| PER-07 | Phase 3 | Pending |
+| PER-07 | Phase 3 | Complete |
 | PER-08 | Phase 3 | Pending |
 | PER-09 | Phase 3 | Pending |
-| BCK-01 | Phase 3 | Pending |
-| BCK-02 | Phase 3 | Pending |
+| BCK-01 | Phase 3 | Complete |
+| BCK-02 | Phase 3 | Complete |
 | DAT-01 | Phase 4 | Pending |
 | DAT-02 | Phase 4 | Pending |
 | DAT-03 | Phase 4 | Pending |
