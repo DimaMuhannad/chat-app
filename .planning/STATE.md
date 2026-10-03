@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 03
 current_phase_name: Персона как данные
 status: executing
-stopped_at: Completed 03-07-PLAN.md
-last_updated: "2026-10-03T06:30:56.069Z"
+stopped_at: Completed 03-08-PLAN.md
+last_updated: "2026-10-03T06:37:06.393Z"
 last_activity: 2026-10-03
 last_activity_desc: Phase 03 execution started
-state_head: dc380760fdb43bfa6edb3323a4d3af2a83cccf01
+state_head: c48336197c4cbe022469a5e21238873bd9d61d2a
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 18
-  completed_plans: 15
+  completed_plans: 16
   percent: 29
 ---
 
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-10-02)
 ## Current Position
 
 Phase: 03 (Персона как данные) — EXECUTING
-Plan: 8 of 10 (выполнено 03-01..03-06)
+Plan: 9 of 10 (выполнено 03-01..03-08)
 Status: Ready to execute
-Last activity: 2026-10-03 — Completed 03-06-PLAN.md
+Last activity: 2026-10-03 — Completed 03-08-PLAN.md
 
 Progress: [███░░░░░░░] 29%
 
@@ -84,6 +84,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 03 P05 | 14 min | 2 tasks | 5 files |
 | Phase 03 P06 | 6 min | 2 tasks | 8 files |
 | Phase 03 P07 | 35 min | 3 tasks | 16 files |
+| Phase 03 P08 | 12 min | 2 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,7 @@ Progress: [███░░░░░░░] 29%
 - [Phase 03]: 03-05: Security Tile строится из workspaces персоны (clearance вместо id, правила remote и сообщение - данные пространства), без данных 503; характеризация NDA-чек-листа закоммичена до правки, assert-строки сохранены дословно; Web по-прежнему не проверяет слова NDA (1:1, закрывает Фаза 4)
 - [Phase 03]: 03-06: область по умолчанию из персоны при создании (без персоны 503, явная область персоне не нужна); /persona/current отдаёт task_areas и ui.texts явным белым списком; index.html без токенов владельца, данные персоны в DOM только через textContent/Option, область выводится через escapeHtml; DDL assistant-core DEFAULT остаётся долгом до Фазы 6
 - [Phase 03]: 03-07: Jinja2 3.1.6 и MarkupSafe 3.0.3 поставлены с двумя точными закреплениями после одобрения владельца (одиночная установка потянула бы MarkupSafe 3.0.4); render_prompt - SandboxedEnvironment + StrictUndefined + keep_trailing_newline, рендер один раз до цикла попыток моделей; 4 промпта (secretary, intent_router, methodist, methodist_scope_check) = эталоны 03-01 побайтно, константы удалены
+- [Phase 03]: 03-08: имена runtime-переменных дайджестов date_str, weekday, tomorrow_date_str, tomorrow_weekday; все 8 промптов D-08 - шаблоны персоны и рендерятся в эталоны побайтно; дебриф рендерится до try; синтетическая персона даёт 8 других промптов на тех же кодовых путях (PER-09, промпты); пробрасывание PersonaConfigError из внешнего try дайджестов - вопрос к 03-10
 
 ### Pending Todos
 
@@ -145,6 +147,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-03T06:30:55.764Z
-Stopped at: Completed 03-07-PLAN.md
+Last session: 2026-10-03T06:37:06.135Z
+Stopped at: Completed 03-08-PLAN.md
 Resume file: None
