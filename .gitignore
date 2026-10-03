@@ -56,3 +56,6 @@ uploads/
 # import-linter / grimp caches
 .import_linter_cache/
 .grimp_cache/
+
+# GSD CLI cache
+.gsd/
