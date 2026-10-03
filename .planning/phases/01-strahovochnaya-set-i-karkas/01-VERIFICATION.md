@@ -1,6 +1,6 @@
 ---
 phase: 01-strahovochnaya-set-i-karkas
-verified: 2026-10-02T06:10:00Z
+verified: 2026-10-03T10:00:00Z
 status: passed
 score: 5/5 must-haves verified
 covered_files:
@@ -21,10 +21,10 @@ covered_files:
   - ".planning/phases/01-strahovochnaya-set-i-karkas/01-02-SUMMARY.md"
   - ".planning/phases/01-strahovochnaya-set-i-karkas/01-03-SUMMARY.md"
   - ".planning/phases/01-strahovochnaya-set-i-karkas/01-04-SUMMARY.md"
-covered_digest: "v2:sha256:912048637a11d11755c5faba0e0e855c00336349994865980de3ffc5d369a727"
+covered_digest: "v2:sha256:fe9ca68a165967f69722dff0ab8aca598456c555f163148b7d4a2d7cf93a6e7a"
 behavior_unverified: 0
 overrides_applied: 0
-re_verification: null
+re_verification: 2026-10-03T10:00:00Z
 advisory:
   - finding: "WR-05: гейт оставляет мусор в /opt/assistant-core/sqlite+aiosqlite:/tmp/gate-* (18 каталогов на момент проверки, растёт с каждым прогоном; файлы скрыты .gitignore по маске *.db)"
     category: other
