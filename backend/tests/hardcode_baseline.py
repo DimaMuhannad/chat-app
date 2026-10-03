@@ -1,0 +1,19 @@
+"""Остаточный хардкод профиля владельца вне данных персоны: baseline сканера (PER-08, D-16).
+
+Словарь {путь: {класс токена: число строк}} создан один раз программой (render_baseline из
+test_hardcode_scanner.py) и просмотрен вручную в конце Фазы 3. Он может только сокращаться:
+тесты test_no_new_hardcode_outside_baseline (новая находка или новый файл) и
+test_baseline_has_no_stale_entries (запись больше фактического счёта) краснеют иначе.
+Фаза 6 доводит словарь до пустого (FIN-01). Причины остатка по группам - в docs/BASELINE.md,
+раздел «Итог после Фазы 3».
+
+Счёт - число строк файла, где есть хотя бы один токен класса. Токены вычисляются из данных
+персоны по умолчанию (persona_tokens.owner_tokens), в этот файл не копируются.
+"""
+
+HARDCODE_BASELINE: dict[str, dict[str, int]] = {
+    "backend/app/db.py": {"organization": 1},
+    "scripts/notion_dev.py": {"domain": 2, "organization": 8},
+    "scripts/run_daedalus.sh": {"name": 2, "organization": 1},
+    "scripts/security_shield.py": {"account": 2, "organization": 6},
+}
