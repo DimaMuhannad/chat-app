@@ -49,7 +49,7 @@ def nda_rule_for(ws: dict[str, Any]) -> NdaRemoteRule | None:
     if ws.get("clearance") != "restricted_nda":
         return None
     return NdaRemoteRule(
-        forbidden_remote_substrings=tuple(ws.get("forbidden_remote_substrings") or ()),
+        forbidden_remote_substrings=tuple(s for s in (ws.get("forbidden_remote_substrings") or ()) if s),
         violation_message=ws.get("remote_violation_message") or DEFAULT_REMOTE_VIOLATION,
     )
 
@@ -86,6 +86,9 @@ def audit_path(target_path: Path, nda_rule: NdaRemoteRule | None = None) -> dict
     code_user, user_email = run_cmd(["git", "config", "user.email"], cwd=str(target_path))
 
     violations = []
+    if nda_rule is not None and not nda_rule.forbidden_remote_substrings:
+        # Fail-closed: NDA-пространство без правил remote не может считаться чистым.
+        violations.append("CRITICAL: у NDA-пространства не заданы правила remote (fail-closed)")
     if nda_rule is not None and code == 0 and any(s in origin_url for s in nda_rule.forbidden_remote_substrings):
         violations.append(nda_rule.violation_message)
 
@@ -169,6 +172,8 @@ async def run_security_audit(req: AuditRequest):
 
     workspaces = await _persona_workspaces()
     target_projects = [p for p in workspaces if p["id"] == req.project_id] if req.project_id else workspaces
+    if req.project_id and not target_projects:
+        raise HTTPException(status_code=404, detail="Рабочее пространство не найдено")
 
     for p in target_projects:
         p_path = Path(p["path"])
