@@ -1,11 +1,13 @@
 """Общие фикстуры: вторая синтетическая персона (FND-03) и копия БД с засеянной персоной (D-04).
 
 Сессионная autouse-фикстура persona_session_db делает копию БД из соединения mode=ro, засевает
-её seed-CLI assistant-core и подменяет settings.SQLITE_DB_PATH: боевая БД не открывается на запись
-ни под гейтом, ни при ручном запуске pytest.
+её seed-CLI assistant-core (персона по умолчанию, затем вторая синтетическая персона из словаря
+Фазы 1 через synthetic_to_config) и подменяет settings.SQLITE_DB_PATH: боевая БД не открывается
+на запись ни под гейтом, ни при ручном запуске pytest.
 """
 
 import copy
+import json
 import os
 import sqlite3
 import subprocess
@@ -15,7 +17,9 @@ import pytest
 
 from app.core.config import settings
 
-from .synthetic_persona import SYNTHETIC_PERSONA
+from .synthetic_persona import SYNTHETIC_PERSONA, synthetic_to_config
+
+SYNTHETIC_PERSONA_ID = SYNTHETIC_PERSONA["id"]
 
 
 @pytest.fixture
@@ -44,17 +48,24 @@ def persona_session_db(tmp_path_factory):
         source.close()
 
     env = {k: v for k, v in os.environ.items() if k != "PERSONA_CONFIG_PATH"}
-    result = subprocess.run(
-        [str(core / ".venv" / "bin" / "python"), "-m", "src.persona.seed", "--db", str(copy_path)],
-        cwd=str(core),
-        env=env,
-        capture_output=True,
-        text=True,
-        timeout=120,
+    synthetic_file = copy_path.parent / "synthetic-persona.json"
+    synthetic_file.write_text(
+        json.dumps(synthetic_to_config(SYNTHETIC_PERSONA), ensure_ascii=False), encoding="utf-8"
     )
-    if result.returncode != 0:
-        tail = "\n".join((result.stderr or result.stdout).splitlines()[-20:])
-        pytest.fail(f"seed персоны в копию БД не удался (код {result.returncode}):\n{tail}")
+    seed_cmd = [str(core / ".venv" / "bin" / "python"), "-m", "src.persona.seed", "--db", str(copy_path)]
+    # первый засев - персона по умолчанию, второй - синтетическая (JSON читает yaml.safe_load)
+    for extra in ([], ["--persona-config", str(synthetic_file)]):
+        result = subprocess.run(
+            seed_cmd + extra,
+            cwd=str(core),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        if result.returncode != 0:
+            tail = "\n".join((result.stderr or result.stdout).splitlines()[-20:])
+            pytest.fail(f"seed персоны в копию БД не удался (код {result.returncode}):\n{tail}")
 
     previous = settings.SQLITE_DB_PATH
     settings.SQLITE_DB_PATH = str(copy_path)
