@@ -436,3 +436,18 @@ async def test_overview_and_audit_503_without_workspaces(monkeypatch):
     assert overview.status_code == 503
     assert audit.status_code == 503
     assert single.status_code == 503
+
+
+def test_normalize_remote_matches_case_and_scp_forms():
+    """WR-07: регистр, scp-форма, ssh:// и .git не обходят подстроку запрещённого remote."""
+    from app.api.v1.security import normalize_remote
+
+    needle = normalize_remote("example.org/Owner")
+    for url in (
+        "https://example.org/OWNER/repo.git",
+        "git@example.org:owner/repo.git",
+        "ssh://git@Example.org/owner/repo/",
+        "https://user:token@example.org/owner/repo",
+    ):
+        assert needle in normalize_remote(url), url
+    assert needle not in normalize_remote("git@example.org:other/repo.git")

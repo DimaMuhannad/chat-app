@@ -62,6 +62,22 @@ async def _persona_workspaces() -> list[dict[str, Any]]:
     return workspaces
 
 
+def normalize_remote(url: str) -> str:
+    """Привести адрес remote к виду host/owner/repo в нижнем регистре (WR-07).
+
+    Адреса GitHub регистронезависимы, а один репозиторий записывается по-разному:
+    https://host/owner/repo.git, ssh://git@host/owner/repo, git@host:owner/repo (scp-форма).
+    """
+    value = url.strip().casefold()
+    scheme_form = "://" in value
+    if scheme_form:
+        value = value.split("://", 1)[1]
+    value = value.rsplit("@", 1)[-1] if "@" in value.split("/", 1)[0] else value
+    if not scheme_form:
+        value = value.replace(":", "/", 1)  # scp-форма host:owner/repo
+    return value.rstrip("/").removesuffix(".git").rstrip("/")
+
+
 def run_cmd(cmd: list[str], cwd: str | None = None) -> tuple[int, str]:
     try:
         res = subprocess.run(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
@@ -89,8 +105,13 @@ def audit_path(target_path: Path, nda_rule: NdaRemoteRule | None = None) -> dict
     if nda_rule is not None and not nda_rule.forbidden_remote_substrings:
         # Fail-closed: NDA-пространство без правил remote не может считаться чистым.
         violations.append("CRITICAL: у NDA-пространства не заданы правила remote (fail-closed)")
-    if nda_rule is not None and code == 0 and any(s in origin_url for s in nda_rule.forbidden_remote_substrings):
-        violations.append(nda_rule.violation_message)
+    if nda_rule is not None and code == 0:
+        origin_norm = normalize_remote(origin_url)
+        if any(
+            norm_sub and norm_sub in origin_norm
+            for norm_sub in (normalize_remote(sub) for sub in nda_rule.forbidden_remote_substrings)
+        ):
+            violations.append(nda_rule.violation_message)
 
     # Scan tracked and modified files
     code_files, out_files = run_cmd(["git", "ls-files"], cwd=str(target_path))
