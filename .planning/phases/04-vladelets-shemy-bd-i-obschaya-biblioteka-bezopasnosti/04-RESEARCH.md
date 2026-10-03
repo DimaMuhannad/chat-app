@@ -277,7 +277,7 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 
 ### Pitfall 3: Дрейф ложных срабатываний в `gate.py` (`KNOWN_SHIELD_FALSE_POSITIVES`)
 - **Симптом:** После выноса ключевых слов из `scripts/security_shield.py` в библиотеку `scripts/gate.py` падает с ошибкой: `устаревшая запись (удалите из KNOWN_SHIELD_FALSE_POSITIVES): scripts/security_shield.py [nda-keyword]`.
-- **Причина:** В `gate.py` зашит строгий контроль устаревания записей белого списка. Если скрипт `security_shield.py` стал тонкой обёрткой и больше не содержит литералов `"tydex_internal_secret"` и др., старая запись признаётся устаревшей и краснит гейт.
+- **Причина:** В `gate.py` зашит строгий контроль устаревания записей белого списка. Если скрипт `security_shield.py` стал тонкой обёрткой и больше не содержит литералов ключевых слов NDA и др., старая запись признаётся устаревшей и краснит гейт.
 - **Решение:** При рефакторинге `security_shield.py` синхронно актуализировать словарь `KNOWN_SHIELD_FALSE_POSITIVES` в `scripts/gate.py` (удалить устаревшие записи для `scripts/security_shield.py` и решить исключение для `config/persona.yaml` через распознавание файлов конфигурации).
 
 ### Pitfall 4: Неисполняемые права Git Hook (`chmod +x`)
@@ -509,7 +509,7 @@ DEFAULT_PERSONA_FIXTURE = {
             "color": "red",
             "remote": "git@github.com:tydex-optics/device-firmware.git",
             "forbidden_remote_substrings": ["github.com/dimamuhannad"],
-            "forbidden_keywords": ["tydex_internal_secret", "golay_calibration_key", "thz_proprietary_firmware"],
+            "forbidden_keywords": ["proprietary_secret_alpha", "synthetic_calibration_key", "internal_firmware_flag"],
             "remote_violation_message": "CRITICAL: Tydex private project remote points to personal public account (DimaMuhannad)!",
         },
         {
