@@ -5,47 +5,47 @@ titles: json
 findings:
   - id: CR-01
     severity: critical
-    disposition: open
+    disposition: fixed
     title: "Правило NDA в веб-аудите отключается молча при пустых данных пространства (fail-open)"
   - id: CR-02
     severity: critical
-    disposition: open
+    disposition: fixed
     title: "Форма задачи затирает область (area) пустой строкой, если значения нет в списке персоны или персона не загрузилась"
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Хранимый XSS через неэкранируемые поля задач и напоминаний (pre-existing, но фаза экранировала только area)"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "PersonaConfigError проглатывается общими `except Exception` (ошибка конфигурации превращается в тихую деградацию)"
   - id: WR-03
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Ошибки рендера Jinja2 не приводятся к PersonaConfigError, полнота персоны не проверяется при загрузке"
   - id: WR-04
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Параметры привязок коннекторов не валидируются; тихие искажения и сырые исключения"
   - id: WR-05
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "В контекст каждого шаблона попадает вся персона, включая правила NDA"
   - id: WR-06
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Пути file_catalog, raw_dir, kb_dir не проверяются; ключевые слова не нормализуются"
   - id: WR-07
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Сопоставление remote в веб-аудите NDA слабое (регистр, scp-форма) и не fail-closed при отсутствии origin"
   - id: WR-08
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Косметические обращения к привязке schedule_source падают для персон без неё"
   - id: WR-09
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Загрузчик не оборачивает UnicodeDecodeError"
   - id: IN-01
     severity: info
@@ -75,26 +75,26 @@ findings:
     severity: info
     disposition: open
     title: "MethodistService всегда читает настройки персоны, даже если каталоги переданы явно"
-open: 18
+open: 7
 total: 18
-recorded: 2026-10-03T07:10:45.984Z
+recorded: 2026-10-03T07:49:19.655Z
 ---
 
 # Phase 03: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| CR-01 | critical | open | - |
-| CR-02 | critical | open | - |
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
-| WR-03 | warning | open | - |
-| WR-04 | warning | open | - |
-| WR-05 | warning | open | - |
-| WR-06 | warning | open | - |
-| WR-07 | warning | open | - |
-| WR-08 | warning | open | - |
-| WR-09 | warning | open | - |
+| CR-01 | critical | fixed | 03-REVIEW-FIX.md |
+| CR-02 | critical | fixed | 03-REVIEW-FIX.md |
+| WR-01 | warning | fixed | 03-REVIEW-FIX.md |
+| WR-02 | warning | fixed | 03-REVIEW-FIX.md |
+| WR-03 | warning | fixed | 03-REVIEW-FIX.md |
+| WR-04 | warning | fixed | 03-REVIEW-FIX.md |
+| WR-05 | warning | fixed | 03-REVIEW-FIX.md |
+| WR-06 | warning | fixed | 03-REVIEW-FIX.md |
+| WR-07 | warning | fixed | 03-REVIEW-FIX.md |
+| WR-08 | warning | fixed | 03-REVIEW-FIX.md |
+| WR-09 | warning | fixed | 03-REVIEW-FIX.md |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
