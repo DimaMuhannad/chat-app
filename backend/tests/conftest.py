@@ -73,3 +73,22 @@ def persona_session_db(tmp_path_factory):
         yield copy_path
     finally:
         settings.SQLITE_DB_PATH = previous
+
+
+@pytest.fixture(scope="session")
+def default_persona_config(persona_session_db) -> dict:
+    """Поля персоны по умолчанию (config_json строки personas с id settings.PERSONA_ID).
+
+    Форма та же, что у PersonaConfig.model_dump(mode="json") в assistant-core: данные профиля
+    владельца берутся отсюда, а не копируются в тесты (PER-08, D-16).
+    """
+    connection = sqlite3.connect(persona_session_db)
+    try:
+        row = connection.execute(
+            "SELECT config_json FROM personas WHERE id = ?;", (settings.PERSONA_ID,)
+        ).fetchone()
+    finally:
+        connection.close()
+    if row is None:
+        pytest.fail("персона по умолчанию не найдена в копии БД")
+    return json.loads(row[0])
