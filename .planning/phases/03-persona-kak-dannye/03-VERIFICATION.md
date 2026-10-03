@@ -1,7 +1,7 @@
 ---
 phase: 03-persona-kak-dannye
-verified: 2026-10-03T08:00:00Z
-status: human_needed
+verified: 2026-10-03T14:45:00Z
+status: passed
 score: 5/5 must-haves verified
 covered_files:
   - ".planning/phases/03-persona-kak-dannye/03-01-PLAN.md"
@@ -47,10 +47,10 @@ covered_files:
   - "backend/tests/test_synthetic_persona.py"
   - "docs/BASELINE.md"
   - "scripts/gate.py"
-covered_digest: "v2:sha256:809737c6e91063da0bbbd3cf5524e37594af9fc03ad76f3e4af87fba7403e3b0"
+covered_digest: "v2:sha256:c89967f967913addab2397dafd95ed052501bbcf58edd6890b4b921af37ada81"
 behavior_unverified: 0
 overrides_applied: 0
-re_verification: false
+re_verification: 2026-10-03T14:45:00Z
 review_verdict:
   critical_breaks_success_criterion: false
   CR-01: "предупреждение (defense-in-depth), не нарушает критерий 3"
