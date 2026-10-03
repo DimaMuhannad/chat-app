@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 03
 current_phase_name: Персона как данные
 status: executing
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-10-02T15:46:07.721Z"
-last_activity: 2026-10-02
+stopped_at: Completed 03-04-PLAN.md
+last_updated: "2026-10-03T06:03:11.256Z"
+last_activity: 2026-10-03
 last_activity_desc: Phase 03 execution started
-state_head: ff1c871e3ca1f9a358816215d80c72a9a52a2929
+state_head: 28c14c008ce3656c292e4ae2c4bbb3b3c788e8c6
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 18
-  completed_plans: 11
+  completed_plans: 12
   percent: 29
 ---
 
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-10-02)
 ## Current Position
 
 Phase: 03 (Персона как данные) — EXECUTING
-Plan: 4 of 10
+Plan: 5 of 10 (выполнено 03-01..03-04)
 Status: Ready to execute
-Last activity: 2026-10-02 — Phase 03 execution started
+Last activity: 2026-10-03 — Completed 03-04-PLAN.md
 
 Progress: [███░░░░░░░] 29%
 
@@ -80,6 +80,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 03 P01 | 8 min | 2 tasks | 11 files |
 | Phase 03 P02 | 10min | 2 tasks | 16 files |
 | Phase 03 P03 | 9min | 2 tasks | 12 files |
+| Phase 03 P04 | 8 min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,7 @@ Progress: [███░░░░░░░] 29%
 - [Phase 03]: 03-02: seed-CLI сначала проверяет файл персоны, потом открывает БД; chat-app читает персону только из таблиц (без PyYAML)
 - [Phase 03]: 03-03: task_areas и methodist обязательны в схеме персоны; правила restricted_nda и Telegram-плейсхолдеры проверяются валидаторами (fail-closed)
 - [Phase 03]: 03-03: единственное исключение shield для config/persona.yaml (3 находки), число известных находок 18 (OQ1), снимается правилом Фазы 4
+- [Phase 03]: 03-04: synthetic_to_config приспосабливает вторую персону к схеме (SYNTHETIC_PERSONA и каркас Фазы 1 не тронуты); токены профиля вычисляются owner_tokens из данных персоны, пара persona_tokens.py под дрейфом SHA-256 в гейте
 
 ### Pending Todos
 
@@ -137,6 +139,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-02T15:46:07.477Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-10-03T06:03:10.956Z
+Stopped at: Completed 03-04-PLAN.md
 Resume file: None
