@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 03
 current_phase_name: Персона как данные
 status: executing
-stopped_at: Completed 03-04-PLAN.md
-last_updated: "2026-10-03T06:03:11.256Z"
+stopped_at: Completed 03-05-PLAN.md
+last_updated: "2026-10-03T06:11:42.385Z"
 last_activity: 2026-10-03
 last_activity_desc: Phase 03 execution started
-state_head: 28c14c008ce3656c292e4ae2c4bbb3b3c788e8c6
+state_head: 626f17460cd094fa08e98a4eb0964f91e7eb99b3
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 18
-  completed_plans: 12
+  completed_plans: 13
   percent: 29
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-02)
 ## Current Position
 
 Phase: 03 (Персона как данные) — EXECUTING
-Plan: 5 of 10 (выполнено 03-01..03-04)
+Plan: 6 of 10 (выполнено 03-01..03-04)
 Status: Ready to execute
 Last activity: 2026-10-03 — Completed 03-04-PLAN.md
 
@@ -81,6 +81,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 03 P02 | 10min | 2 tasks | 16 files |
 | Phase 03 P03 | 9min | 2 tasks | 12 files |
 | Phase 03 P04 | 8 min | 2 tasks | 9 files |
+| Phase 03 P05 | 14 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -112,6 +113,7 @@ Progress: [███░░░░░░░] 29%
 - [Phase 03]: 03-03: task_areas и methodist обязательны в схеме персоны; правила restricted_nda и Telegram-плейсхолдеры проверяются валидаторами (fail-closed)
 - [Phase 03]: 03-03: единственное исключение shield для config/persona.yaml (3 находки), число известных находок 18 (OQ1), снимается правилом Фазы 4
 - [Phase 03]: 03-04: synthetic_to_config приспосабливает вторую персону к схеме (SYNTHETIC_PERSONA и каркас Фазы 1 не тронуты); токены профиля вычисляются owner_tokens из данных персоны, пара persona_tokens.py под дрейфом SHA-256 в гейте
+- [Phase 03]: 03-05: Security Tile строится из workspaces персоны (clearance вместо id, правила remote и сообщение - данные пространства), без данных 503; характеризация NDA-чек-листа закоммичена до правки, assert-строки сохранены дословно; Web по-прежнему не проверяет слова NDA (1:1, закрывает Фаза 4)
 
 ### Pending Todos
 
@@ -139,6 +141,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-03T06:03:10.956Z
-Stopped at: Completed 03-04-PLAN.md
+Last session: 2026-10-03T06:11:42.143Z
+Stopped at: Completed 03-05-PLAN.md
 Resume file: None
