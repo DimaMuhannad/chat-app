@@ -256,7 +256,7 @@ Plans:
   3. Коннектор не поднимается без выданного персоной scope; процесс chat-app не держит учётные данные LMS (проверяемый тест).
   4. Тест-сканер хардкода работает с пустым allowlist: в коде chat-app и assistant-core нет ГУАП, Тидекс, ФИО, персональных путей и аккаунтов вне данных персоны; персона по умолчанию ведёт себя как раньше; 100% pytest.
 
-**Plans:** 2/6 plans complete
+**Plans:** 3/6 plans complete
 
 Plans:
 **Wave 1**
@@ -266,7 +266,7 @@ Plans:
 - [x] 06-02-PLAN.md — ISO-02 (Corporate NDA Air-Gap for Inbound Email & Context)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 06-03-PLAN.md — ISO-03 (Zero-Trust Scopes & Credentials Isolation)
+- [x] 06-03-PLAN.md — ISO-03 (Zero-Trust Scopes & Credentials Isolation)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 06-04-PLAN.md — ISO-04 (Multi-Tenant Concurrent Execution Test)
@@ -319,7 +319,7 @@ Plans:
 | 3. Персона как данные | 10/10 | Complete    | 2026-10-03 |
 | 4. Владелец схемы БД и общая библиотека безопасности | 4/4 | Complete    | 2026-10-03 |
 | 5. Единый HITL-примитив | 4/4 | Complete    | 2026-10-03 |
-| 6. Готовность к мультитенантности | 2/6 | In Progress | - |
+| 6. Готовность к мультитенантности | 3/6 | In Progress | - |
 | 7. Git-источники и дашборды Notion | 0/TBD | Not started | - |
 
 ## Операционные пункты (не фазы)
