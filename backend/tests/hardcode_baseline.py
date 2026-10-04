@@ -12,7 +12,6 @@ test_baseline_has_no_stale_entries (запись больше фактическ
 """
 
 HARDCODE_BASELINE: dict[str, dict[str, int]] = {
-    "backend/app/db.py": {"organization": 1},
     "scripts/notion_dev.py": {"domain": 2, "organization": 8},
     "scripts/run_daedalus.sh": {"name": 2, "organization": 1},
 }

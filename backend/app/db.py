@@ -113,7 +113,7 @@ class DatabaseService:
             # 6. Tomorrow's lessons (from schedule snapshot)
             tomorrow_lessons = []
             cursor = await conn.execute(
-                "SELECT raw_payload FROM content_snapshots WHERE source_id LIKE 'rasp_guap_%' ORDER BY id DESC LIMIT 1;"
+                "SELECT raw_payload FROM content_snapshots WHERE source_id LIKE 'rasp_%' ORDER BY id DESC LIMIT 1;"
             )
             row = await cursor.fetchone()
             if row and row["raw_payload"]:
