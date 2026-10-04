@@ -42,7 +42,11 @@ EXPECTED_CORE_TABLES = [
     "workspaces",
     "connector_bindings",
     "schema_migrations",
+    "pending_confirmations",
 ]
+
+LATEST_SCHEMA_VERSION = "0002_pending_confirmations"
+ALL_MIGRATIONS = ["0001_initial_schema", "0002_pending_confirmations"]
 
 
 def test_initial_schema_creates_all_tables(tmp_path: Path) -> None:
@@ -51,8 +55,9 @@ def test_initial_schema_creates_all_tables(tmp_path: Path) -> None:
     applied = run_migrations(db_file)
 
     assert "0001_initial_schema" in applied
-    assert get_schema_version(db_file) == "0001_initial_schema"
-    assert list_applied_migrations(db_file) == ["0001_initial_schema"]
+    assert "0002_pending_confirmations" in applied
+    assert get_schema_version(db_file) == LATEST_SCHEMA_VERSION
+    assert list_applied_migrations(db_file) == ALL_MIGRATIONS
 
     conn = sqlite3.connect(str(db_file))
     try:
@@ -71,12 +76,13 @@ def test_migrations_in_memory_connection() -> None:
     try:
         applied = run_migrations(conn)
         assert "0001_initial_schema" in applied
+        assert "0002_pending_confirmations" in applied
 
         # База осталась активной и таблицы существуют в том же соединении
         cur = conn.cursor()
         cur.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='tasks';")
         assert cur.fetchone()[0] == 1
-        assert get_schema_version(conn) == "0001_initial_schema"
+        assert get_schema_version(conn) == LATEST_SCHEMA_VERSION
     finally:
         conn.close()
 
@@ -88,10 +94,11 @@ def test_migrations_aiosqlite_in_memory_connection() -> None:
         async with aiosqlite.connect(":memory:", check_same_thread=False) as aio_conn:
             applied = run_migrations(aio_conn)
             assert "0001_initial_schema" in applied
+            assert "0002_pending_confirmations" in applied
 
             async with aio_conn.execute("SELECT count(*) FROM schema_migrations;") as cursor:
                 row = await cursor.fetchone()
-                assert row[0] == 1
+                assert row[0] == 2
 
             async with aio_conn.execute("SELECT count(*) FROM tasks;") as cursor:
                 row = await cursor.fetchone()
@@ -104,11 +111,11 @@ def test_migrations_idempotency_empty_db(tmp_path: Path) -> None:
     """Повторный запуск миграций возвращает пустой список и ничего не меняет."""
     db_file = tmp_path / "test_idempotent.db"
     first_applied = run_migrations(db_file)
-    assert first_applied == ["0001_initial_schema"]
+    assert first_applied == ALL_MIGRATIONS
 
     second_applied = run_migrations(db_file)
     assert second_applied == []
-    assert get_schema_version(db_file) == "0001_initial_schema"
+    assert get_schema_version(db_file) == LATEST_SCHEMA_VERSION
 
 
 def test_migrations_baseline_detection_existing_db(tmp_path: Path) -> None:
@@ -149,7 +156,8 @@ def test_migrations_baseline_detection_existing_db(tmp_path: Path) -> None:
     # Запускаем миграции
     applied = run_migrations(db_file)
     assert "0001_initial_schema" in applied
-    assert get_schema_version(db_file) == "0001_initial_schema"
+    assert "0002_pending_confirmations" in applied
+    assert get_schema_version(db_file) == LATEST_SCHEMA_VERSION
 
     # Проверяем, что пользовательские данные не затронуты
     conn = sqlite3.connect(str(db_file))

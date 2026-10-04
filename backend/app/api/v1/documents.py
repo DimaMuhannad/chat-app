@@ -2,6 +2,12 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 from app.db import DatabaseService
 from app.models.dashboard_schemas import DocumentCreate, DocumentUpdate
+from app.core.config import settings
+from assistant_shared.hitl import (
+    ConfirmationChannel,
+    ConfirmationStore,
+    create_hitl_conflict_exception,
+)
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -36,7 +42,17 @@ async def update_document(doc_id: int, data: DocumentUpdate):
 
 @router.delete("/{doc_id}")
 async def delete_document(doc_id: int):
-    deleted = await DatabaseService.delete_document(doc_id)
-    if not deleted:
+    doc = await DatabaseService.get_document(doc_id)
+    if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    return {"ok": True}
+
+    store = ConfirmationStore(settings.SQLITE_DB_PATH)
+    confirmation = await store.create_confirmation(
+        persona_id=settings.PERSONA_ID,
+        action_type="delete_document",
+        target_id=str(doc_id),
+        payload={"doc_id": doc_id, "title": doc.get("title")},
+        channel=ConfirmationChannel.WEB,
+        ttl_minutes=10,
+    )
+    raise create_hitl_conflict_exception(confirmation)

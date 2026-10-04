@@ -2,6 +2,12 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 from app.db import DatabaseService
 from app.models.dashboard_schemas import TaskCreate, TaskUpdate, TaskStatusUpdate
+from app.core.config import settings
+from assistant_shared.hitl import (
+    ConfirmationChannel,
+    ConfirmationStore,
+    create_hitl_conflict_exception,
+)
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
@@ -50,7 +56,17 @@ async def update_task_status(task_id: int, data: TaskStatusUpdate):
 
 @router.delete("/{task_id}")
 async def delete_task(task_id: int):
-    deleted = await DatabaseService.delete_task(task_id)
-    if not deleted:
+    task = await DatabaseService.get_task(task_id)
+    if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    return {"ok": True}
+
+    store = ConfirmationStore(settings.SQLITE_DB_PATH)
+    confirmation = await store.create_confirmation(
+        persona_id=settings.PERSONA_ID,
+        action_type="delete_task",
+        target_id=str(task_id),
+        payload={"task_id": task_id, "title": task.get("title")},
+        channel=ConfirmationChannel.WEB,
+        ttl_minutes=10,
+    )
+    raise create_hitl_conflict_exception(confirmation)

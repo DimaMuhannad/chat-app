@@ -2,6 +2,12 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 from app.db import DatabaseService
 from app.models.dashboard_schemas import ProjectCreate, ProjectUpdate
+from app.core.config import settings
+from assistant_shared.hitl import (
+    ConfirmationChannel,
+    ConfirmationStore,
+    create_hitl_conflict_exception,
+)
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
@@ -37,7 +43,17 @@ async def update_project(project_id: int, data: ProjectUpdate):
 
 @router.delete("/{project_id}")
 async def delete_project(project_id: int):
-    deleted = await DatabaseService.delete_project(project_id)
-    if not deleted:
+    project = await DatabaseService.get_project(project_id)
+    if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    return {"ok": True}
+
+    store = ConfirmationStore(settings.SQLITE_DB_PATH)
+    confirmation = await store.create_confirmation(
+        persona_id=settings.PERSONA_ID,
+        action_type="delete_project",
+        target_id=str(project_id),
+        payload={"project_id": project_id, "name": project.get("name")},
+        channel=ConfirmationChannel.WEB,
+        ttl_minutes=10,
+    )
+    raise create_hitl_conflict_exception(confirmation)

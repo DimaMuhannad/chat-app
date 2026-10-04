@@ -1,6 +1,8 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 from app.main import app
+from app.core.config import settings
+from assistant_shared.hitl import ConfirmationStore, confirm_pending_action
 
 
 async def _persona_default_area(client) -> str:
@@ -42,9 +44,16 @@ async def test_projects_crud():
         created = create_res.json()
         assert created["name"] == "Тестовый проект"
 
-        # 3. Delete project
+        # 3. Delete project (HITL двухшаговый сценарий per HIT-03, D-05)
         del_res = await client.delete(f"/api/v1/projects/{created['id']}")
-        assert del_res.status_code == 200
+        assert del_res.status_code == 409
+        conf_id = del_res.json()["detail"]["confirmation_id"]
+
+        store = ConfirmationStore(settings.SQLITE_DB_PATH)
+        await confirm_pending_action(conf_id, store)
+
+        check_res = await client.get(f"/api/v1/projects/{created['id']}")
+        assert check_res.status_code == 404
 
 
 @pytest.mark.anyio

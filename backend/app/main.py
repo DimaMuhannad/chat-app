@@ -9,6 +9,7 @@ from app.api.v1.health import router as health_router
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.db import PersonaNotLoadedError
+import app.hitl_handlers  # noqa: F401 - регистрация обработчиков HITL при запуске
 
 logging.basicConfig(
     level=logging.INFO,

@@ -2,6 +2,12 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 from app.db import DatabaseService
 from app.models.dashboard_schemas import ReminderCreate, ReminderUpdate
+from app.core.config import settings
+from assistant_shared.hitl import (
+    ConfirmationChannel,
+    ConfirmationStore,
+    create_hitl_conflict_exception,
+)
 
 router = APIRouter(prefix="/reminders", tags=["Reminders"])
 
@@ -45,7 +51,17 @@ async def toggle_reminder(reminder_id: int):
 
 @router.delete("/{reminder_id}")
 async def delete_reminder(reminder_id: int):
-    deleted = await DatabaseService.delete_reminder(reminder_id)
-    if not deleted:
+    reminder = await DatabaseService.get_reminder(reminder_id)
+    if not reminder:
         raise HTTPException(status_code=404, detail="Reminder not found")
-    return {"ok": True}
+
+    store = ConfirmationStore(settings.SQLITE_DB_PATH)
+    confirmation = await store.create_confirmation(
+        persona_id=settings.PERSONA_ID,
+        action_type="delete_reminder",
+        target_id=str(reminder_id),
+        payload={"reminder_id": reminder_id, "what": reminder.get("what")},
+        channel=ConfirmationChannel.WEB,
+        ttl_minutes=10,
+    )
+    raise create_hitl_conflict_exception(confirmation)

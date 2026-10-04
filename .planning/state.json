@@ -1,0 +1,48 @@
+{
+  "contract": "1.0.0",
+  "flavor": "core",
+  "milestone": null,
+  "phases": [
+    {
+      "number": "1",
+      "name": "Страховочная сеть и каркас",
+      "status": "complete"
+    },
+    {
+      "number": "2",
+      "name": "Порты и домен без изменения поведения",
+      "status": "complete"
+    },
+    {
+      "number": "3",
+      "name": "Персона как данные",
+      "status": "complete"
+    },
+    {
+      "number": "4",
+      "name": "Владелец схемы БД и общая библиотека безопасности",
+      "status": "complete"
+    },
+    {
+      "number": "5",
+      "name": "Единый HITL-примитив",
+      "status": "in_progress"
+    },
+    {
+      "number": "6",
+      "name": "Готовность к мультитенантности",
+      "status": "pending"
+    },
+    {
+      "number": "7",
+      "name": "Git-источники и дашборды Notion",
+      "status": "pending"
+    }
+  ],
+  "next": {
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step",
+    "reason": "Phase 5 of 7 · 63% · executing"
+  },
+  "updated_at": "2026-10-04T09:25:00.000Z"
+}
