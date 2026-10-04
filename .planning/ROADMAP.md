@@ -184,20 +184,20 @@ Plans:
   4. Существует одна security-реализация (секреты, запрещённые файлы, NDA-правила из данных), импортируемая Security Tile и assistant-core; `scripts/security_shield.py` в обоих репозиториях — тонкая обёртка; тест подтверждает отсутствие дрейфа на общем наборе синтетических фикстур, тест эквивалентности NDA проходит против библиотеки.
   5. pre-commit hook установлен в оба репозитория воспроизводимо и блокирует коммит с синтетическим «секретом».
 
-**Plans:** 4 plans across 4 waves
+**Plans:** 4/4 plans complete
 
 Plans:
 **Wave 1**
-- [ ] 04-01-PLAN.md — Создание пакета assistant-shared, DDL-мигратора и базовой схемы SQLite
+- [x] 04-01-PLAN.md — Создание пакета assistant-shared, DDL-мигратора и базовой схемы SQLite
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 04-02-PLAN.md — Конфигурация пути БД из env, фабрика соединений WAL/busy_timeout и изоляция тестов chat-app
+- [x] 04-02-PLAN.md — Конфигурация пути БД из env, фабрика соединений WAL/busy_timeout и изоляция тестов chat-app
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 04-03-PLAN.md — Общая библиотека безопасности assistant_shared.security, рефакторинг security_shield и паритет проверок
+- [x] 04-03-PLAN.md — Общая библиотека безопасности assistant_shared.security, рефакторинг security_shield и паритет проверок
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 04-04-PLAN.md — Воспроизводимый pre-commit hook и финальная верификация полного гейта
+- [x] 04-04-PLAN.md — Воспроизводимый pre-commit hook и финальная верификация полного гейта
 
 **Заметки для планирования**:
 - Открытый вопрос для discuss-phase 4: где физически живёт общая библиотека. Условие: оба `.venv` импортируют её, а chat-app не зависит от пути `/opt/assistant-core` во время тестов (отдельный локальный пакет, ставится в оба `.venv`, либо копия с тестом на дрейф).
