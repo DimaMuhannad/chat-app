@@ -342,6 +342,8 @@ def test_p02_web_patterns_subset_of_script():
 
 def test_p03_shield_copies_identical():
     core = Path(os.environ.get("ASSISTANT_CORE_DIR", "/opt/assistant-core"))
+    if not core.is_dir():
+        pytest.skip("assistant-core not available in isolated test mode")
     other = core / "scripts" / "security_shield.py"
     assert other.is_file(), "копия shield в assistant-core не найдена"
     mine = hashlib.sha256(SHIELD_PATH.read_bytes()).hexdigest()

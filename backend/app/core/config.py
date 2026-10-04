@@ -1,4 +1,5 @@
 from typing import List
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,7 +17,10 @@ class Settings(BaseSettings):
     CORS_ORIGINS: List[str] = ["*"]
     
     # Storage & Paths
-    SQLITE_DB_PATH: str = "/opt/assistant-core/data/assistant.db"
+    SQLITE_DB_PATH: str = Field(
+        default="./data/assistant.db",
+        validation_alias=AliasChoices("SQLITE_DB_PATH", "DATABASE_PATH"),
+    )
     WORKSPACE_ROOT: str = "/opt/chat-app"
 
     # Персона, читаемая из таблиц общей БД (YAML читает только assistant-core)

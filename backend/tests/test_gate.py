@@ -197,6 +197,8 @@ def test_persona_drift_check_uses_given_name(tmp_path):
 def test_gate_checks_persona_tokens_pair():
     assert gate.CHAT_TOKENS == gate.CHAT_DIR / "backend" / "tests" / "persona_tokens.py"
     assert gate.CORE_TOKENS == gate.CORE_DIR / "tests" / "persona_tokens.py"
+    if not gate.CORE_DIR.is_dir():
+        pytest.skip("assistant-core not available in isolated test mode")
     assert gate.CHAT_TOKENS.is_file() and gate.CORE_TOKENS.is_file()
     source = " ".join(Path(gate.__file__).read_text(encoding="utf-8").split())
     assert "persona_drift_check(CHAT_PERSONA, CORE_PERSONA)" in source
