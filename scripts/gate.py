@@ -60,10 +60,8 @@ SHIELD_MODE = "all"
 KNOWN_SHIELD_FALSE_POSITIVES: dict[str, dict[tuple[str, str], int]] = {
     "chat-app": {
         ("docs/UNIVERSAL_ARCHITECTURE_BLUEPRINT.md", "nda-keyword"): 3,
-        ("scripts/security_shield.py", "nda-keyword"): 3,
     },
     "assistant-core": {
-        ("scripts/security_shield.py", "nda-keyword"): 3,
         # Решение владельца 2026-10-02 (OQ1): единственное исключение для файла данных персоны;
         # снимается правилом Фазы 4 (SEC-01).
         ("config/persona.yaml", "nda-keyword"): 3,
@@ -385,7 +383,10 @@ def run_shield_step(repo: str, repo_dir: Path) -> CheckResult:
         return CheckResult(repo, name, False, f"не найден scripts/security_shield.py: {script}")
     if not repo_dir.is_dir():
         return CheckResult(repo, name, False, f"нет каталога репозитория: {repo_dir}")
-    cmd = [sys.executable, str(script), str(repo_dir)]
+    python_bin = CHAT_VENV_BIN / "python" if repo == REPO_CHAT else CORE_VENV_BIN / "python"
+    if not python_bin.is_file():
+        python_bin = Path(sys.executable)
+    cmd = [str(python_bin), str(script), str(repo_dir)]
     if SHIELD_MODE == "all":
         cmd.append("--all")
     try:

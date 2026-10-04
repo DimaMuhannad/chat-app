@@ -5,13 +5,12 @@ from pathlib import Path
 from app.core.config import Settings
 
 
-def test_sqlite_db_path_default() -> None:
+def test_sqlite_db_path_default(monkeypatch) -> None:
     """По умолчанию путь к БД относительный, без хардкода assistant-core."""
     # Очищаем env на время теста
-    env = os.environ.copy()
-    env.pop("SQLITE_DB_PATH", None)
-    env.pop("DATABASE_PATH", None)
-    s = Settings(_env_file=None, **{})
+    monkeypatch.delenv("SQLITE_DB_PATH", raising=False)
+    monkeypatch.delenv("DATABASE_PATH", raising=False)
+    s = Settings(_env_file=None)
     assert s.SQLITE_DB_PATH == "./data/assistant.db"
 
 

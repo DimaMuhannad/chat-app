@@ -15,5 +15,4 @@ HARDCODE_BASELINE: dict[str, dict[str, int]] = {
     "backend/app/db.py": {"organization": 1},
     "scripts/notion_dev.py": {"domain": 2, "organization": 8},
     "scripts/run_daedalus.sh": {"name": 2, "organization": 1},
-    "scripts/security_shield.py": {"account": 2, "organization": 6},
 }
