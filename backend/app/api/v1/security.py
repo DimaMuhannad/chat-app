@@ -1,57 +1,24 @@
-import os
-import re
+from pathlib import Path
 import subprocess
 import time
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from app.core.config import settings
 from app.db import DatabaseService
+from assistant_shared.security import (
+    DEFAULT_REMOTE_VIOLATION,
+    FORBIDDEN_FILES,
+    NdaRemoteRule,
+    SECRET_PATTERNS,
+    audit_path,
+    nda_rule_for,
+    normalize_remote,
+    run_cmd,
+)
 
 router = APIRouter(prefix="/security", tags=["Security Shield"])
-
-# Common high-risk secret patterns
-SECRET_PATTERNS: list[tuple[str, re.Pattern]] = [
-    ("Private Key", re.compile(r"-----BEGIN (RSA|EC|OPENSSH|DSA|PGP)?\s*PRIVATE KEY-----")),
-    ("GitHub Personal Access Token", re.compile(r"(ghp_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59})")),
-    ("Google API Key", re.compile(r"AIzaSy[a-zA-Z0-9_-]{33}")),
-    ("Telegram Bot Token", re.compile(r"\b[0-9]{8,10}:[a-zA-Z0-9_-]{35}\b")),
-    ("OpenAI/Anthropic API Key", re.compile(r"(sk-[a-zA-Z0-9]{20,}|sk-ant-[a-zA-Z0-9]{20,})")),
-    ("Notion API Token", re.compile(r"(ntn_[a-zA-Z0-9]{40,}|secret_[a-zA-Z0-9]{40,})")),
-]
-
-FORBIDDEN_FILES: list[re.Pattern] = [
-    re.compile(r"(^|/)\.env(\.(local|dev|development|prod|production|staging|secrets))?$"),
-    re.compile(r"(^|/)credentials\.json$"),
-    re.compile(r"(^|/)token\.json$"),
-    re.compile(r".+\.session$"),
-    re.compile(r".+\.session-journal$"),
-    re.compile(r".+\.(pem|key|pkcs12|pfx)$"),
-]
-
-# Нейтральное сообщение, если у NDA-пространства не задан свой текст нарушения (без названий организаций).
-DEFAULT_REMOTE_VIOLATION = "CRITICAL: remote рабочего пространства указывает на запрещённый аккаунт!"
-
-
-@dataclass(frozen=True)
-class NdaRemoteRule:
-    """Правило remote для NDA-пространства: запрещённые подстроки origin и текст нарушения (данные пространства)."""
-
-    forbidden_remote_substrings: tuple[str, ...]
-    violation_message: str
-
-
-def nda_rule_for(ws: dict[str, Any]) -> NdaRemoteRule | None:
-    """Правило NDA только для пространства с допуском restricted_nda (признак - допуск, не id и не префикс)."""
-    if ws.get("clearance") != "restricted_nda":
-        return None
-    return NdaRemoteRule(
-        forbidden_remote_substrings=tuple(s for s in (ws.get("forbidden_remote_substrings") or ()) if s),
-        violation_message=ws.get("remote_violation_message") or DEFAULT_REMOTE_VIOLATION,
-    )
 
 
 async def _persona_workspaces() -> list[dict[str, Any]]:
@@ -60,87 +27,6 @@ async def _persona_workspaces() -> list[dict[str, Any]]:
     if not workspaces:
         raise HTTPException(status_code=503, detail="Рабочие пространства персоны не загружены в базу данных")
     return workspaces
-
-
-def normalize_remote(url: str) -> str:
-    """Привести адрес remote к виду host/owner/repo в нижнем регистре (WR-07).
-
-    Адреса GitHub регистронезависимы, а один репозиторий записывается по-разному:
-    https://host/owner/repo.git, ssh://git@host/owner/repo, git@host:owner/repo (scp-форма).
-    """
-    value = url.strip().casefold()
-    scheme_form = "://" in value
-    if scheme_form:
-        value = value.split("://", 1)[1]
-    value = value.rsplit("@", 1)[-1] if "@" in value.split("/", 1)[0] else value
-    if not scheme_form:
-        value = value.replace(":", "/", 1)  # scp-форма host:owner/repo
-    return value.rstrip("/").removesuffix(".git").rstrip("/")
-
-
-def run_cmd(cmd: list[str], cwd: str | None = None) -> tuple[int, str]:
-    try:
-        res = subprocess.run(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
-        return res.returncode, res.stdout.strip()
-    except Exception as e:
-        return 1, str(e)
-
-
-def audit_path(target_path: Path, nda_rule: NdaRemoteRule | None = None) -> dict[str, Any]:
-    if not target_path.exists():
-        return {
-            "exists": False,
-            "status": "virtual_airgap",
-            "message": "Директория изолирована или еще не склонирована на данном сервере (Air-gap активен)",
-            "scanned_files": 0,
-            "violations": [],
-            "origin_url": "N/A",
-            "author_email": "N/A",
-        }
-
-    code, origin_url = run_cmd(["git", "remote", "get-url", "origin"], cwd=str(target_path))
-    code_user, user_email = run_cmd(["git", "config", "user.email"], cwd=str(target_path))
-
-    violations = []
-    if nda_rule is not None and not nda_rule.forbidden_remote_substrings:
-        # Fail-closed: NDA-пространство без правил remote не может считаться чистым.
-        violations.append("CRITICAL: у NDA-пространства не заданы правила remote (fail-closed)")
-    if nda_rule is not None and code == 0:
-        origin_norm = normalize_remote(origin_url)
-        if any(
-            norm_sub and norm_sub in origin_norm
-            for norm_sub in (normalize_remote(sub) for sub in nda_rule.forbidden_remote_substrings)
-        ):
-            violations.append(nda_rule.violation_message)
-
-    # Scan tracked and modified files
-    code_files, out_files = run_cmd(["git", "ls-files"], cwd=str(target_path))
-    files_to_scan = [line.strip() for line in out_files.splitlines() if line.strip()][:100]  # Limit to 100 files for fast API
-
-    for rel_path in files_to_scan:
-        full_path = target_path / rel_path
-        str_path = str(full_path).replace("\\", "/")
-        for pattern in FORBIDDEN_FILES:
-            if pattern.search(str_path):
-                violations.append(f"Запрещенный файл обнаружен в репозитории: {rel_path}")
-
-        if full_path.is_file():
-            try:
-                content = full_path.read_text(encoding="utf-8", errors="ignore")
-                for name, pat in SECRET_PATTERNS:
-                    if pat.search(content):
-                        violations.append(f"{rel_path}: Обнаружен потенциальный секрет ({name})")
-            except Exception:
-                pass
-
-    return {
-        "exists": True,
-        "status": "passed" if not violations else "violations",
-        "scanned_files": len(files_to_scan),
-        "violations": violations,
-        "origin_url": origin_url if code == 0 else "None",
-        "author_email": user_email if code_user == 0 else "Not configured",
-    }
 
 
 class AuditRequest(BaseModel):

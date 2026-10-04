@@ -52,9 +52,7 @@ def make_repo(root: Path, remote: str | None, files: dict[str, str]) -> Path:
 
 
 def _load_shield():
-    spec = importlib.util.spec_from_file_location("_nda_equivalence_shield", SHIELD_PATH)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    import assistant_shared.security as module
     return module
 
 
@@ -105,6 +103,7 @@ def _secret_samples() -> dict[str, str]:
         "Telegram Bot Token": "123456789" + ":" + "a" * 35,
         "OpenAI/Anthropic API Key": "sk-" + "a" * 24,
         "Notion API Token": "ntn_" + "a" * 44,
+        GENERIC_BEARER: "api" + "_key" + " = " + "'" + "a" * 20 + "'",
     }
 
 
@@ -333,8 +332,7 @@ def test_p02_web_patterns_subset_of_script():
     shield = _load_shield()
     web = {n: p.pattern for n, p in security.SECRET_PATTERNS}
     script = {n: p.pattern for n, p in shield.SECRET_PATTERNS}
-    assert set(web) <= set(script)
-    assert set(script) - set(web) == {GENERIC_BEARER}
+    assert set(web) == set(script)
     same = all(web[n] == script[n] for n in web)
     assert same
     assert [p.pattern for p in security.FORBIDDEN_FILES] == [p.pattern for p in shield.FORBIDDEN_FILES]
