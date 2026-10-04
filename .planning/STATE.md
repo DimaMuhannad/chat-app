@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
 current_phase: 5
-current_phase_name: HITL-подтверждения и Telegram Bot
-status: ready
-stopped_at: Plan 05-03 complete, ready for Plan 05-04
-last_updated: "2026-10-04T10:12:00.000Z"
+current_phase_name: Единый HITL-примитив
+status: complete
+stopped_at: Phase 05 complete, quality gate GREEN, ready for Phase 06
+last_updated: "2026-10-04T10:21:00.000Z"
 last_activity: 2026-10-04
-last_activity_desc: Plan 05-03 complete (Telegram bot_handler HITL card, callbacks & clear_dialog parity)
-state_head: 2ee891a
+last_activity_desc: Phase 05 complete (Plan 05-04 Web UI polling, CRUD two-step, gate.py GREEN)
+state_head: HEAD
 progress:
   total_phases: 7
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 26
-  completed_plans: 25
-  percent: 65
+  completed_plans: 26
+  percent: 71
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-02)
 
 **Core value:** Профиль владельца целиком живёт в данных, а платформа работает для любой персоны — без регрессии поведения и без ослабления HITL и air-gap NDA.
-**Current focus:** Phase 05 — HITL-подтверждения и Telegram Bot
+**Current focus:** Phase 05 — Единый HITL-примитив (ЗАВЕРШЕНА)
 
 ## Current Position
 
-Phase: 5 (Единый HITL-примитив) — IN PROGRESS
-Plan: 05-04 (Web UI поллинг статуса, обновление CRUD-тестов и сквозной гейт gate.py)
-Status: Plan 05-03 completed, ready for Plan 05-04
-Last activity: 2026-10-04 — Plan 05-03 complete (05-03-SUMMARY.md)
+Phase: 5 (Единый HITL-примитив) — COMPLETE
+Plan: 05-04 (Web UI поллинг статуса, обновление CRUD-тестов и сквозной гейт gate.py) — COMPLETE
+Status: Phase 05 complete, gate.py GREEN, ready for Phase 06
+Last activity: 2026-10-04 — Phase 05 complete (05-04-SUMMARY.md)
 
-Progress: [███████░░░] 65%
+Progress: [████████░░] 71%
 
 ## Состояние окружения: ЗАМОРОЖЕН (с 2026-10-01)
 

@@ -220,7 +220,21 @@ Plans:
   3. `test_hitl_safety_guardrails.py` и `test_bot_group_isolation.py` проходят без изменения ассертов; тексты, кнопки и callback-данные подтверждения в Telegram (очистка диалога, выставление оценок) идентичны прежним.
   4. Веб-интерфейс показывает состояние «ожидает подтверждения» вместо ложного «удалено»; существующие CRUD-тесты chat-app переведены на двухшаговый поток (DELETE, 409, подтверждение, удалено) без ослабления силы проверки.
 
-**Plans**: TBD
+**Plans**: 4/4 plans complete
+
+Plans:
+**Wave 1**
+- [x] 05-01-PLAN.md — миграция 0002_pending_confirmations.sql, доменные модели и ConfirmationStore в assistant-shared, тесты примитива и изоляции
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 05-02-PLAN.md — защита DELETE-эндпоинтов chat-app (409 Conflict), роутер подтверждений, hitl_handlers и тесты web guardrails
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 05-03-PLAN.md — Telegram-карточки подтверждений и обработка колбэков в assistant-core, паритет 1:1 с существующими диалогами
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 05-04-PLAN.md — клиентский поллинг и тосты в Web UI, обновление CRUD-тестов и сквозной гейт gate.py
+
 **UI hint**: yes
 
 **Заметки для планирования**:

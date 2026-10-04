@@ -962,8 +962,34 @@
 
     async function deleteTask(id) {
       if (!confirm('Удалить эту задачу?')) return;
-      await fetch(`${API_BASE}/tasks/${id}`, { method: 'DELETE' });
-      await refreshAll();
+      try {
+        const res = await fetch(`${API_BASE}/tasks/${id}`, { method: 'DELETE' });
+        if (res.status === 409) {
+          const conflictData = await res.json();
+          const confId = conflictData.detail ? conflictData.detail.confirmation_id : null;
+          showToast('⚠️ Запрос на удаление отправлен в Telegram. Ожидание подтверждения...', 'warning', 8000);
+          if (confId) {
+            pollConfirmation(
+              confId,
+              async () => {
+                showToast('✅ Задача успешно удалена!', 'success');
+                await refreshAll();
+              },
+              (reason) => {
+                if (reason === 'rejected') {
+                  showToast('❌ Удаление отклонено в Telegram.', 'error');
+                } else if (reason === 'expired' || reason === 'timeout') {
+                  showToast('⏳ Срок ожидания подтверждения истек.', 'error');
+                }
+              }
+            );
+          }
+          return;
+        }
+        await refreshAll();
+      } catch (err) {
+        console.error('Error deleting task:', err);
+      }
     }
 
     // Task Modal
@@ -1089,8 +1115,92 @@
 
     async function deleteReminder(id) {
       if (!confirm('Удалить напоминание?')) return;
-      await fetch(`${API_BASE}/reminders/${id}`, { method: 'DELETE' });
-      await refreshAll();
+      try {
+        const res = await fetch(`${API_BASE}/reminders/${id}`, { method: 'DELETE' });
+        if (res.status === 409) {
+          const conflictData = await res.json();
+          const confId = conflictData.detail ? conflictData.detail.confirmation_id : null;
+          showToast('⚠️ Запрос на удаление отправлен в Telegram. Ожидание подтверждения...', 'warning', 8000);
+          if (confId) {
+            pollConfirmation(
+              confId,
+              async () => {
+                showToast('✅ Напоминание успешно удалено!', 'success');
+                await refreshAll();
+              },
+              (reason) => {
+                if (reason === 'rejected') {
+                  showToast('❌ Удаление отклонено в Telegram.', 'error');
+                } else if (reason === 'expired' || reason === 'timeout') {
+                  showToast('⏳ Срок ожидания подтверждения истек.', 'error');
+                }
+              }
+            );
+          }
+          return;
+        }
+        await refreshAll();
+      } catch (err) {
+        console.error('Error deleting reminder:', err);
+      }
+    }
+
+    async function deleteProject(id) {
+      if (!confirm('Удалить проект?')) return;
+      try {
+        const res = await fetch(`${API_BASE}/projects/${id}`, { method: 'DELETE' });
+        if (res.status === 409) {
+          const conflictData = await res.json();
+          const confId = conflictData.detail ? conflictData.detail.confirmation_id : null;
+          showToast('⚠️ Запрос на удаление отправлен в Telegram. Ожидание подтверждения...', 'warning', 8000);
+          if (confId) {
+            pollConfirmation(
+              confId,
+              async () => {
+                showToast('✅ Проект успешно удален!', 'success');
+                await refreshAll();
+              },
+              (reason) => {
+                if (reason === 'rejected') showToast('❌ Удаление отклонено в Telegram.', 'error');
+                else showToast('⏳ Срок ожидания подтверждения истек.', 'error');
+              }
+            );
+          }
+          return;
+        }
+        await refreshAll();
+      } catch (err) {
+        console.error('Error deleting project:', err);
+      }
+    }
+
+    async function deleteDocument(id) {
+      if (!confirm('Удалить документ?')) return;
+      try {
+        const res = await fetch(`${API_BASE}/documents/${id}`, { method: 'DELETE' });
+        if (res.status === 409) {
+          const conflictData = await res.json();
+          const confId = conflictData.detail ? conflictData.detail.confirmation_id : null;
+          showToast('⚠️ Запрос на удаление отправлен в Telegram. Ожидание подтверждения...', 'warning', 8000);
+          if (confId) {
+            pollConfirmation(
+              confId,
+              async () => {
+                showToast('✅ Документ успешно удален!', 'success');
+                await refreshAll();
+              },
+              (reason) => {
+                if (reason === 'rejected') showToast('❌ Удаление отклонено в Telegram.', 'error');
+                else showToast('⏳ Срок ожидания подтверждения истек.', 'error');
+              }
+            );
+          }
+          return;
+        }
+        await refreshAll();
+      } catch (err) {
+        console.error('Error deleting document:', err);
+      }
     }
 
     function openNewReminderModal() {
@@ -1361,6 +1471,80 @@
         if (btn) btn.disabled = false;
       }
     }
+
+    // HITL Toast Notifications & Polling (HIT-04, D-02)
+    function showToast(message, type = 'info', duration = 6000) {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = 'pointer-events-auto px-4 py-3 rounded-xl shadow-xl border text-sm max-w-sm transition-all duration-300 transform translate-y-2 opacity-0 flex items-center space-x-2.5 backdrop-blur-md';
+
+      let bgClasses = 'bg-slate-800/95 border-slate-700 text-slate-100';
+      let icon = 'ℹ️';
+
+      if (type === 'warning' || type === 'hitl') {
+        bgClasses = 'bg-amber-950/95 border-amber-600/60 text-amber-100 shadow-amber-900/30';
+        icon = '⚠️';
+      } else if (type === 'success') {
+        bgClasses = 'bg-emerald-950/95 border-emerald-600/60 text-emerald-100 shadow-emerald-900/30';
+        icon = '✅';
+      } else if (type === 'error') {
+        bgClasses = 'bg-rose-950/95 border-rose-600/60 text-rose-100 shadow-rose-900/30';
+        icon = '❌';
+      }
+
+      toast.className += ` ${bgClasses}`;
+      toast.innerHTML = `<span class="text-base select-none">${icon}</span><span class="flex-1 leading-snug">${escapeHtml(message)}</span>`;
+
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+
+    async function pollConfirmation(confirmationId, onSuccess, onError, maxDurationMs = 60000, intervalMs = 2000) {
+      const startTime = Date.now();
+      const intervalId = setInterval(async () => {
+        try {
+          if (Date.now() - startTime > maxDurationMs) {
+            clearInterval(intervalId);
+            if (onError) onError('timeout');
+            return;
+          }
+
+          const res = await fetch(`${API_BASE}/confirmations/${confirmationId}`);
+          if (!res.ok) {
+            clearInterval(intervalId);
+            if (onError) onError('not_found');
+            return;
+          }
+
+          const data = await res.json();
+          if (data.status === 'confirmed') {
+            clearInterval(intervalId);
+            if (onSuccess) onSuccess(data);
+          } else if (data.status === 'rejected') {
+            clearInterval(intervalId);
+            if (onError) onError('rejected');
+          } else if (data.status === 'expired') {
+            clearInterval(intervalId);
+            if (onError) onError('expired');
+          }
+        } catch (err) {
+          console.error('Error polling confirmation status:', err);
+        }
+      }, intervalMs);
+    }
   </script>
+
+  <!-- TOAST NOTIFICATIONS CONTAINER -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 </body>
 </html>

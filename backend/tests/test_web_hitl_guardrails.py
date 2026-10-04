@@ -272,3 +272,47 @@ async def test_reject_action_blocks_deletion():
         # Документ остался в базе
         get_res = await client.get(f"/api/v1/documents/{doc_id}")
         assert get_res.status_code == 200
+
+
+@pytest.mark.anyio
+async def test_ui_polling_contract():
+    """Проверяет контракт клиентского поллинга статуса подтверждения (D-02, HIT-04)."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # 1. Создаем задачу
+        create_res = await client.post("/api/v1/tasks", json={
+            "title": "Задача для теста поллинга",
+            "area": "ГУАП",
+            "priority": "P3",
+        })
+        assert create_res.status_code == 201
+        task_id = create_res.json()["id"]
+
+        # 2. Вызов DELETE возвращает 409 с confirmation_id
+        del_res = await client.delete(f"/api/v1/tasks/{task_id}")
+        assert del_res.status_code == 409
+        conf_id = del_res.json()["detail"]["confirmation_id"]
+
+        # 3. Эмуляция первого цикла поллинга (pending)
+        poll_res_1 = await client.get(f"/api/v1/confirmations/{conf_id}")
+        assert poll_res_1.status_code == 200
+        assert poll_res_1.json()["status"] == "pending"
+
+        # 4. Владелец подтверждает действие в Telegram
+        store = ConfirmationStore(settings.SQLITE_DB_PATH)
+        await confirm_pending_action(conf_id, store, user_id="123456789")
+
+        # 5. Эмуляция второго цикла поллинга (confirmed)
+        poll_res_2 = await client.get(f"/api/v1/confirmations/{conf_id}")
+        assert poll_res_2.status_code == 200
+        assert poll_res_2.json()["status"] == "confirmed"
+
+        # 6. Проверяем, что в static/index.html внедрена клиентская логика pollConfirmation и перехвата 409
+        index_html_path = Path(__file__).resolve().parent.parent / "app" / "static" / "index.html"
+        assert index_html_path.exists(), "index.html должен существовать"
+        html_content = index_html_path.read_text(encoding="utf-8")
+
+        assert "pollConfirmation" in html_content
+        assert "showToast" in html_content
+        assert "409" in html_content
+        assert "Запрос на удаление отправлен в Telegram" in html_content

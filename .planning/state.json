@@ -26,7 +26,7 @@
     {
       "number": "5",
       "name": "Единый HITL-примитив",
-      "status": "in_progress"
+      "status": "complete"
     },
     {
       "number": "6",
@@ -40,9 +40,9 @@
     }
   ],
   "next": {
-    "command": "/gsd:progress --next",
-    "label": "Advance to the next step",
-    "reason": "Phase 5 of 7 · 63% · executing"
+    "command": "/gsd:plan-phase 6",
+    "label": "Plan Phase 6",
+    "reason": "Phase 5 of 7 complete · 71% · ready to plan phase 6"
   },
-  "updated_at": "2026-10-04T09:25:00.000Z"
+  "updated_at": "2026-10-04T10:23:00.000Z"
 }
