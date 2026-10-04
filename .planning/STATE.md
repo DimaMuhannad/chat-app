@@ -3,17 +3,17 @@ gsd_state_version: "1.0"
 current_phase: 5
 current_phase_name: HITL-подтверждения и Telegram Bot
 status: ready
-stopped_at: Plan 05-02 complete, ready for Plan 05-03
-last_updated: "2026-10-04T09:25:00.000Z"
+stopped_at: Plan 05-03 complete, ready for Plan 05-04
+last_updated: "2026-10-04T10:12:00.000Z"
 last_activity: 2026-10-04
-last_activity_desc: Plan 05-02 complete (8 web HITL guardrails pass, DELETE 409 & confirmations router)
-state_head: 4cf694a
+last_activity_desc: Plan 05-03 complete (Telegram bot_handler HITL card, callbacks & clear_dialog parity)
+state_head: 2ee891a
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 26
-  completed_plans: 24
-  percent: 63
+  completed_plans: 25
+  percent: 65
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-10-02)
 ## Current Position
 
 Phase: 5 (Единый HITL-примитив) — IN PROGRESS
-Plan: 05-03 (Интеграция Telegram bot_handler и UX 1:1)
-Status: Plan 05-02 completed, ready for Plan 05-03
-Last activity: 2026-10-04 — Plan 05-02 complete (05-02-SUMMARY.md)
+Plan: 05-04 (Web UI поллинг статуса, обновление CRUD-тестов и сквозной гейт gate.py)
+Status: Plan 05-03 completed, ready for Plan 05-04
+Last activity: 2026-10-04 — Plan 05-03 complete (05-03-SUMMARY.md)
 
-Progress: [██████░░░░] 63%
+Progress: [███████░░░] 65%
 
 ## Состояние окружения: ЗАМОРОЖЕН (с 2026-10-01)
 
