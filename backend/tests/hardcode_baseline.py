@@ -11,7 +11,5 @@ test_baseline_has_no_stale_entries (запись больше фактическ
 персоны по умолчанию (persona_tokens.owner_tokens), в этот файл не копируются.
 """
 
-HARDCODE_BASELINE: dict[str, dict[str, int]] = {
-    "scripts/notion_dev.py": {"domain": 2, "organization": 8},
-    "scripts/run_daedalus.sh": {"name": 2, "organization": 1},
-}
+HARDCODE_BASELINE: dict[str, dict[str, int]] = {}
+
