@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 current_phase: 5
 current_phase_name: HITL-подтверждения и Telegram Bot
 status: ready
-stopped_at: Phase 05 context gathered, ready for planning
-last_updated: "2026-10-04T07:18:00.000Z"
+stopped_at: Phase 05 planned (4 plans), ready for execution
+last_updated: "2026-10-04T07:45:00.000Z"
 last_activity: 2026-10-04
-last_activity_desc: Phase 05 context gathered (05-CONTEXT.md)
-state_head: c1750cb
+last_activity_desc: Phase 05 planned (4 plans created)
+state_head: fab10d4
 progress:
   total_phases: 7
   completed_phases: 4
-  total_plans: 22
+  total_plans: 26
   completed_plans: 22
   percent: 57
 ---
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-10-02)
 
 ## Current Position
 
-Phase: 5 (Единый HITL-примитив) — IN PROGRESS
-Plan: Planning
-Status: Context gathered, ready for plan-phase
-Last activity: 2026-10-04 — Phase 05 context gathered (05-CONTEXT.md)
+Phase: 5 (Единый HITL-примитив) — READY FOR EXECUTION
+Plan: 05-01 (Общий примитив HITL в assistant_shared.hitl и миграция 0002_pending_confirmations.sql)
+Status: Planned (4 plans, 4 waves, 100% decision coverage)
+Last activity: 2026-10-04 — Phase 05 planned (4 plans created)
 
 Progress: [██████░░░░] 57%
 
