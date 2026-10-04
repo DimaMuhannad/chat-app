@@ -10,6 +10,8 @@ from typing import Any
 import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+if Path("/opt/assistant-core").is_dir():
+    sys.path.insert(0, "/opt/assistant-core")
 
 from src import config
 
