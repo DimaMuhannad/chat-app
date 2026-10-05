@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 7
-current_phase_name: Git-источники и дашборды Notion
-status: complete
-stopped_at: Phase 7 complete (all 4 plans executed, Quality Gate GREEN)
-last_updated: "2026-10-04T22:15:00.000Z"
-last_activity: 2026-10-04
-last_activity_desc: Phase 07 executed (07-01..07-04 complete, gate.py GREEN)
-state_head: 5b1cc36
+current_phase: 8
+current_phase_name: Исполнительный инструментальный контур (Tool Calling)
+status: ready_to_plan
+stopped_at: Phase 8 discuss complete (08-CONTEXT.md and 08-DISCUSSION-LOG.md generated)
+last_updated: "2026-10-05T10:37:00.000Z"
+last_activity: 2026-10-05
+last_activity_desc: Phase 08 discuss complete (strict HITL, two-step tool calling, time clarification)
+state_head: fcf6e4c
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 7
   total_plans: 36
   completed_plans: 36
-  percent: 100
+  percent: 88
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-02)
 
 **Core value:** Профиль владельца целиком живёт в данных, а платформа работает для любой персоны — без регрессии поведения и без ослабления HITL и air-gap NDA.
-**Current focus:** Phase 07 — Git-источники и дашборды Notion (COMPLETE)
+**Current focus:** Phase 08 — Исполнительный инструментальный контур (Tool Calling)
 
 ## Current Position
 
-Phase: 7 (Git-источники и дашборды Notion) — COMPLETE
-Plan: 07-04 (completed)
-Status: All 4 plans complete, Quality Gate GREEN, 100% test pass rate across both repositories
-Last activity: 2026-10-04 — Phase 07 complete (07-01..07-04)
+Phase: 8 (Исполнительный инструментальный контур — Tool Calling)
+Plan: Ready to plan (gsd-plan-phase 8)
+Status: Discuss phase complete, decisions captured in 08-CONTEXT.md
+Last activity: 2026-10-05 — Phase 08 discuss complete
 
-Progress: [██████████] 100% (All 7 phases complete, 36/36 plans)
+Progress: [████████░░] 88% (Phase 8 in progress)
 
 ## Состояние окружения: ЗАМОРОЖЕН (с 2026-10-01)
 
