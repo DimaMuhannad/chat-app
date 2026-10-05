@@ -3,17 +3,17 @@ gsd_state_version: "1.0"
 current_phase: 8
 current_phase_name: Исполнительный инструментальный контур (Tool Calling)
 status: in_progress
-stopped_at: Plan 08-01 executed (1/4 plans complete, Quality Gate GREEN)
-last_updated: "2026-10-05T12:00:00.000Z"
+stopped_at: Plan 08-02 executed (2/4 plans complete, Quality Gate GREEN)
+last_updated: "2026-10-05T12:50:00.000Z"
 last_activity: 2026-10-05
-last_activity_desc: Plan 08-01 executed (tools_schema.py, anti-hallucination prompt, SecretaryDialogEngine)
-state_head: da06473
+last_activity_desc: Plan 08-02 executed (HITL confirmation cards, action handlers, callback_query router)
+state_head: 6c3dd15
 progress:
   total_phases: 8
   completed_phases: 7
   total_plans: 40
-  completed_plans: 37
-  percent: 92
+  completed_plans: 38
+  percent: 95
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-10-02)
 ## Current Position
 
 Phase: 8 (Исполнительный инструментальный контур — Tool Calling)
-Plan: 08-02 (ready to execute)
-Status: Plan 08-01 executed and verified GREEN, ready for Plan 08-02
-Last activity: 2026-10-05 — Plan 08-01 completed and verified
+Plan: 08-03 (ready to execute)
+Status: Plan 08-02 executed and verified GREEN, ready for Plan 08-03
+Last activity: 2026-10-05 — Plan 08-02 completed and verified
 
-Progress: [█████████░] 92% (Phase 8: 1/4 plans executed)
+Progress: [█████████▌] 95% (Phase 8: 2/4 plans executed)
 
 ## Состояние окружения: ЗАМОРОЖЕН (с 2026-10-01)
 

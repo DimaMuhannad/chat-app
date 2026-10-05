@@ -334,14 +334,14 @@ Plans:
   6. При сбое Google Calendar API событие сохраняется в локальной SQLite как `pending_sync`, а в чат выводится кнопка `[🔄 Повторить синхронизацию]` (D-04).
   7. Сквозной интеграционный тест и единый Quality Gate (`scripts/gate.py`) подтверждают 100% pass на обоих репозиториях.
 
-**Plans:** 1/4 plans executed (4/4 planned)
+**Plans:** 2/4 plans executed (4/4 planned)
 
 Plans:
 **Wave 1**
 - [x] 08-01-PLAN.md — ACT-01, ACT-02 (Декларативные схемы types.Tool, обработка function_call в SecretaryDialogEngine и антигаллюцинационный промпт)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 08-02-PLAN.md — ACT-03 (Интерактивные HITL-карточки подтверждения в Telegram, генерация кнопок и обработчик callback_query)
+- [x] 08-02-PLAN.md — ACT-03 (Интерактивные HITL-карточки подтверждения в Telegram, генерация кнопок и обработчик callback_query)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 08-03-PLAN.md — ACT-04 (Двухшаговый Tool Calling для почты, уточняющий диалог, буфер pending_sync и интенты планирования)
@@ -363,7 +363,7 @@ Plans:
 | 5. Единый HITL-примитив | 4/4 | Complete    | 2026-10-03 |
 | 6. Готовность к мультитенантности | 6/6 | Complete | 2026-10-04 |
 | 7. Git-источники и дашборды Notion | 4/4 | Complete | 2026-10-04 |
-| 8. Исполнительный инструментальный контур | 1/4 | In Progress | - |
+| 8. Исполнительный инструментальный контур | 2/4 | In Progress | - |
 
 ## Стратегический бэклог (Milestone v2.0+)
 
