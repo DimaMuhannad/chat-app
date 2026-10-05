@@ -3,17 +3,17 @@ gsd_state_version: "1.0"
 current_phase: 8
 current_phase_name: Исполнительный инструментальный контур (Tool Calling)
 status: in_progress
-stopped_at: Plan 08-02 executed (2/4 plans complete, Quality Gate GREEN)
-last_updated: "2026-10-05T12:50:00.000Z"
+stopped_at: Plan 08-03 executed (3/4 plans complete, Quality Gate GREEN)
+last_updated: "2026-10-05T14:45:00.000Z"
 last_activity: 2026-10-05
-last_activity_desc: Plan 08-02 executed (HITL confirmation cards, action handlers, callback_query router)
-state_head: 6c3dd15
+last_activity_desc: Plan 08-03 executed (Two-step email search, time clarification, pending_sync buffer, planning intents)
+state_head: 2e2c749
 progress:
   total_phases: 8
   completed_phases: 7
   total_plans: 40
-  completed_plans: 38
-  percent: 95
+  completed_plans: 39
+  percent: 98
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-10-02)
 ## Current Position
 
 Phase: 8 (Исполнительный инструментальный контур — Tool Calling)
-Plan: 08-03 (ready to execute)
-Status: Plan 08-02 executed and verified GREEN, ready for Plan 08-03
-Last activity: 2026-10-05 — Plan 08-02 completed and verified
+Plan: 08-04 (ready to execute)
+Status: Plan 08-03 executed and verified GREEN, ready for Plan 08-04
+Last activity: 2026-10-05 — Plan 08-03 completed and verified
 
-Progress: [█████████▌] 95% (Phase 8: 2/4 plans executed)
+Progress: [██████████] 98% (Phase 8: 3/4 plans executed)
 
 ## Состояние окружения: ЗАМОРОЖЕН (с 2026-10-01)
 
@@ -98,12 +98,19 @@ Progress: [█████████▌] 95% (Phase 8: 2/4 plans executed)
 | Phase 05 P04 | 25 min | 2 tasks | 7 files |
 | Phase 06 P01 | 15 min | 2 tasks | 3 files |
 | Phase 06 P02 | 20 min | 2 tasks | 8 files |
+| Phase 08 P01 | 20 min | 2 tasks | 5 files |
+| Phase 08 P02 | 25 min | 2 tasks | 6 files |
+| Phase 08 P03 | 25 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
 ### Decisions
 
 Полный журнал — в PROJECT.md (`<decisions>` и Key Decisions). Кратко:
+
+- [Phase 08]: 08-01: схемы tools_schema.py построены на google.genai types.Tool; строгий антигаллюцинационный промпт (D-05, ACT-02); SecretaryDialogEngine перехватывает function_calls и формирует ActionProposal без физической мутации базы или календаря.
+- [Phase 08]: 08-02: Telegram HITL карточки предложений с кнопками подтверждения и отмены (D-01, ACT-03); регистрация в ConfirmationStore с TTL 15 мин; дедупликация повторных кликов; исполнение строго в action-хэндлерах.
+- [Phase 08]: 08-03: FastIntentRouter расширен интентами calendar_schedule, create_reminder, draft_reply; уточняющий вопрос при неполном времени встречи без произвольных часов (D-03); двухшаговый tool calling поиска писем (D-02); буфер pending_sync в SQLite и кнопка повтора синхронизации при сетевых сбоях (D-04).
 
 - [Владелец W2/W6]: 4 рабочих пространства по умолчанию; пути — данные, репозитории не переносятся.
 - [Владелец W5/W9]: одна общая БД с владельцем схемы, WAL, без шины и двойной записи; одна security-библиотека + pre-commit hook.
