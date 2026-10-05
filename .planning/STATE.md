@@ -2,18 +2,18 @@
 gsd_state_version: "1.0"
 current_phase: 8
 current_phase_name: Исполнительный инструментальный контур (Tool Calling)
-status: in_progress
-stopped_at: Plan 08-03 executed (3/4 plans complete, Quality Gate GREEN)
-last_updated: "2026-10-05T14:45:00.000Z"
+status: complete
+stopped_at: Phase 8 fully executed (4/4 plans complete, Quality Gate GREEN)
+last_updated: "2026-10-05T15:00:00.000Z"
 last_activity: 2026-10-05
-last_activity_desc: Plan 08-03 executed (Two-step email search, time clarification, pending_sync buffer, planning intents)
-state_head: 2e2c749
+last_activity_desc: Plan 08-04 executed (E2E integration tests, Novikova email scenario, Google Calendar pending_sync retry, Phase 8 complete)
+state_head: 95af84b
 progress:
   total_phases: 8
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 40
-  completed_plans: 39
-  percent: 98
+  completed_plans: 40
+  percent: 100
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-02)
 
 **Core value:** Профиль владельца целиком живёт в данных, а платформа работает для любой персоны — без регрессии поведения и без ослабления HITL и air-gap NDA.
-**Current focus:** Phase 08 — Исполнительный инструментальный контур (Tool Calling)
+**Current focus:** Phase 08 — Исполнительный инструментальный контур (Tool Calling) [ЗАВЕРШЕНА]
 
 ## Current Position
 
 Phase: 8 (Исполнительный инструментальный контур — Tool Calling)
-Plan: 08-04 (ready to execute)
-Status: Plan 08-03 executed and verified GREEN, ready for Plan 08-04
-Last activity: 2026-10-05 — Plan 08-03 completed and verified
+Plan: 08-04 (completed)
+Status: Phase 8 fully completed and verified GREEN (100% Quality Gate pass)
+Last activity: 2026-10-05 — Plan 08-04 completed and verified
 
-Progress: [██████████] 98% (Phase 8: 3/4 plans executed)
+Progress: [██████████] 100% (Phase 8: 4/4 plans executed, 40/40 total plans complete)
 
 ## Состояние окружения: ЗАМОРОЖЕН (с 2026-10-01)
 
@@ -101,6 +101,7 @@ Progress: [██████████] 98% (Phase 8: 3/4 plans executed)
 | Phase 08 P01 | 20 min | 2 tasks | 5 files |
 | Phase 08 P02 | 25 min | 2 tasks | 6 files |
 | Phase 08 P03 | 25 min | 2 tasks | 10 files |
+| Phase 08 P04 | 15 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -111,6 +112,7 @@ Progress: [██████████] 98% (Phase 8: 3/4 plans executed)
 - [Phase 08]: 08-01: схемы tools_schema.py построены на google.genai types.Tool; строгий антигаллюцинационный промпт (D-05, ACT-02); SecretaryDialogEngine перехватывает function_calls и формирует ActionProposal без физической мутации базы или календаря.
 - [Phase 08]: 08-02: Telegram HITL карточки предложений с кнопками подтверждения и отмены (D-01, ACT-03); регистрация в ConfirmationStore с TTL 15 мин; дедупликация повторных кликов; исполнение строго в action-хэндлерах.
 - [Phase 08]: 08-03: FastIntentRouter расширен интентами calendar_schedule, create_reminder, draft_reply; уточняющий вопрос при неполном времени встречи без произвольных часов (D-03); двухшаговый tool calling поиска писем (D-02); буфер pending_sync в SQLite и кнопка повтора синхронизации при сетевых сбоях (D-04).
+- [Phase 08]: 08-04: Сквозное E2E-тестирование подтвердило работу двухшагового Tool Calling («письмо Новиковой»), сетевой отказоустойчивости pending_sync с кнопкой retry, и уточняющего диалога при отсутствии времени события. Phase 8 принята: Quality Gate ЗЕЛЁНЫЙ (171 + 404 = 575 тестов).
 
 - [Владелец W2/W6]: 4 рабочих пространства по умолчанию; пути — данные, репозитории не переносятся.
 - [Владелец W5/W9]: одна общая БД с владельцем схемы, WAL, без шины и двойной записи; одна security-библиотека + pre-commit hook.
