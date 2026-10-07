@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 8
-current_phase_name: Исполнительный инструментальный контур (Tool Calling)
-status: complete
-stopped_at: Phase 8 fully executed (4/4 plans complete, Quality Gate GREEN)
-last_updated: "2026-10-05T15:00:00.000Z"
-last_activity: 2026-10-05
-last_activity_desc: Plan 08-04 executed (E2E integration tests, Novikova email scenario, Google Calendar pending_sync retry, Phase 8 complete)
+current_phase: 9
+current_phase_name: Динамическое меню и интерфейс Telegram-бота, декларативные алиасы и аудит эргономики
+status: in_progress
+stopped_at: Plan 09-01 completed (Dynamic Command Registry & SQLite Settings)
+last_updated: "2026-10-07T11:15:00.000Z"
+last_activity: 2026-10-07
+last_activity_desc: Plan 09-01 executed (CommandRegistry, SQLite command settings & custom aliases, tests 8/8 pass, Quality Gate GREEN)
 state_head: 95af84b
 progress:
-  total_phases: 8
+  total_phases: 9
   completed_phases: 8
-  total_plans: 40
-  completed_plans: 40
-  percent: 100
+  total_plans: 44
+  completed_plans: 41
+  percent: 93
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-02)
 
 **Core value:** Профиль владельца целиком живёт в данных, а платформа работает для любой персоны — без регрессии поведения и без ослабления HITL и air-gap NDA.
-**Current focus:** Phase 08 — Исполнительный инструментальный контур (Tool Calling) [ЗАВЕРШЕНА]
+**Current focus:** Phase 09 — Динамическое меню и интерфейс Telegram-бота, декларативные алиасы и аудит эргономики [В РАБОТЕ]
 
 ## Current Position
 
-Phase: 8 (Исполнительный инструментальный контур — Tool Calling)
-Plan: 08-04 (completed)
-Status: Phase 8 fully completed and verified GREEN (100% Quality Gate pass)
-Last activity: 2026-10-05 — Plan 08-04 completed and verified
+Phase: 9 (Динамическое меню и интерфейс Telegram-бота)
+Plan: 09-01 (completed)
+Status: Plan 09-01 executed and verified GREEN (100% Quality Gate pass)
+Last activity: 2026-10-07 — Plan 09-01 completed and verified
 
-Progress: [██████████] 100% (Phase 8: 4/4 plans executed, 40/40 total plans complete)
+Progress: [█████████░] 93% (Phase 9: 1/4 plans executed, 41/44 total plans complete)
 
 ## Состояние окружения: ЗАМОРОЖЕН (с 2026-10-01)
 
