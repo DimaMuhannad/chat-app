@@ -3,17 +3,17 @@ gsd_state_version: "1.0"
 current_phase: 9
 current_phase_name: Динамическое меню и интерфейс Telegram-бота, декларативные алиасы и аудит эргономики
 status: in_progress
-stopped_at: Plan 09-01 completed (Dynamic Command Registry & SQLite Settings)
-last_updated: "2026-10-07T11:15:00.000Z"
+stopped_at: Plan 09-02 completed (Declarative Aliases, FastIntentRouter Fast-Path, Conversational Menu Management)
+last_updated: "2026-10-07T13:36:00.000Z"
 last_activity: 2026-10-07
-last_activity_desc: Plan 09-01 executed (CommandRegistry, SQLite command settings & custom aliases, tests 8/8 pass, Quality Gate GREEN)
+last_activity_desc: Plan 09-02 executed (FastIntentRouter protocol integration, chat menu hide/show, custom alias CRUD, /menu command, 413 tests pass, Quality Gate GREEN)
 state_head: 95af84b
 progress:
   total_phases: 9
   completed_phases: 8
   total_plans: 44
-  completed_plans: 41
-  percent: 93
+  completed_plans: 42
+  percent: 95
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-10-02)
 ## Current Position
 
 Phase: 9 (Динамическое меню и интерфейс Telegram-бота)
-Plan: 09-01 (completed)
-Status: Plan 09-01 executed and verified GREEN (100% Quality Gate pass)
-Last activity: 2026-10-07 — Plan 09-01 completed and verified
+Plan: 09-02 (completed)
+Status: Plan 09-02 executed and verified GREEN (100% Quality Gate pass)
+Last activity: 2026-10-07 — Plan 09-02 completed and verified
 
-Progress: [█████████░] 93% (Phase 9: 1/4 plans executed, 41/44 total plans complete)
+Progress: [█████████░] 95% (Phase 9: 2/4 plans executed, 42/44 total plans complete)
 
 ## Состояние окружения: ЗАМОРОЖЕН (с 2026-10-01)
 
