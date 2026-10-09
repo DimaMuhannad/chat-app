@@ -283,3 +283,10 @@
 ## Перенесено в отдельный GSD-проект assistant-core (решение владельца 2026-10-09)
 
 - **UXQ-03 / план 09-03** «Контекстно-ориентированные Reply-клавиатуры по времени суток и адаптивный интерфейс» (`.planning/phases/09-dinamicheskoe-menyu-i-interfeys/09-03-PLAN.md`, статус deferred). Затрагивает только `/opt/assistant-core`. Не выполнялся в цикле v2.0; становится одной из первых задач нового проекта планирования в `/opt/assistant-core` (`/gsd-onboard`).
+- **Пробелы аудита v2.0** (`.planning/v2.0-MILESTONE-AUDIT.md`), все на стороне assistant-core:
+  1. Точка входа Git → оценка → HITL → Notion: создавать `GitEvaluator` в планировщике `main.py` или по команде бота, вызывать `default_git_source_provider` (GIT-01..04, NTN-01..02).
+  2. Доставка web-карточек HITL в Telegram: поллер `ConfirmationChannel.WEB` + `send_web_hitl_card` (HIT-02..04).
+  3. Миграция `0003` в `assistant-shared` для `bot_command_settings`, `bot_custom_aliases`, `dialog_feedback_log`; убрать инлайн-DDL из `storage/db.py` (DAT-01..03).
+  4. Решить, маскировать ли subject/sender/date NDA-писем в tool-ответе `search_emails` (ISO-02).
+  5. Пропущенные находки ревью фазы 4: WR-03, WR-04, WR-07, WR-11 (`04-REVIEW-FIX.md`).
+  6. Внести ACT-01..04 и UXQ-01..04 в требования нового проекта; верифицировать фазы 4–9 по факту.
