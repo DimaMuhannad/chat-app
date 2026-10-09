@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 import time
 from typing import Any
@@ -35,7 +36,7 @@ async def get_security_overview():
 
     for p in workspaces:
         p_path = Path(p["path"])
-        res = audit_path(p_path, nda_rule=nda_rule_for(p))
+        res = await asyncio.to_thread(audit_path, p_path, nda_rule=nda_rule_for(p))
         total_violations += len(res.get("violations", []))
 
         overview.append({
@@ -77,7 +78,7 @@ async def run_security_audit(req: AuditRequest):
 
     for p in target_projects:
         p_path = Path(p["path"])
-        res = audit_path(p_path, nda_rule=nda_rule_for(p))
+        res = await asyncio.to_thread(audit_path, p_path, nda_rule=nda_rule_for(p))
         results.append({
             "project_id": p["id"],
             "project_name": p["label"],

@@ -273,3 +273,29 @@ def test_cr07_ordinary_files_are_not_forbidden(name):
 def test_cr07_ordinary_code_has_no_false_positives():
     assert _matches("risk-assessment-framework-document-for-the-team") == []
     assert _matches("api_key = settings.get_api_key()") == []
+
+
+# --------------------------- WR-13 ---------------------------
+
+
+@pytest.mark.anyio
+async def test_wr13_audit_runs_off_the_event_loop_thread(monkeypatch):
+    import threading
+
+    from httpx import ASGITransport, AsyncClient
+
+    from app.api.v1 import security
+    from app.main import app
+
+    main_thread = threading.get_ident()
+    seen: list[int] = []
+
+    def fake_audit(path, nda_rule=None, **kwargs):
+        seen.append(threading.get_ident())
+        return {"exists": False, "status": "virtual_airgap", "violations": [], "origin_url": "N/A", "author_email": "N/A"}
+
+    monkeypatch.setattr(security, "audit_path", fake_audit)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/api/v1/security/overview")
+    assert resp.status_code == 200
+    assert seen and all(t != main_thread for t in seen)
