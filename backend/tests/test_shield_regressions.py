@@ -81,3 +81,33 @@ def test_cr03_staged_clean_version_passes_despite_dirty_worktree(tmp_path):
     _git(repo, "add", "ok.txt")
     (repo / "ok.txt").write_text(SECRET_LINE, encoding="utf-8")  # не проиндексировано, в коммит не попадёт
     assert audit_repository(repo) == 0
+
+
+# --------------------------- CR-02 ---------------------------
+
+SHIELD = Path(__file__).resolve().parents[2] / "scripts" / "security_shield.py"
+
+
+def _run_shield(*args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
+    import sys
+
+    return subprocess.run([sys.executable, str(SHIELD), *args], cwd=cwd, capture_output=True, text=True)
+
+
+def test_cr02_flag_first_is_not_treated_as_path(tmp_path):
+    repo = _init(tmp_path / "repo")
+    (repo / "leak.txt").write_text(SECRET_LINE, encoding="utf-8")
+    _git(repo, "add", "leak.txt")
+    res = _run_shield("--all", cwd=repo)
+    assert res.returncode == 1
+    assert "Generic Bearer Secret" in res.stdout
+    res_path = _run_shield("--all", str(repo), cwd=tmp_path)
+    assert res_path.returncode == 1
+
+
+def test_cr02_unknown_flag_and_missing_path_fail(tmp_path):
+    assert _run_shield("--bogus", cwd=tmp_path).returncode != 0
+    assert _run_shield(str(tmp_path / "net-takogo"), cwd=tmp_path).returncode == 1
+    plain = tmp_path / "plain"
+    plain.mkdir()
+    assert audit_repository(plain, check_staged_only=False) == 1
