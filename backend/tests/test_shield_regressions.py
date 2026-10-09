@@ -158,3 +158,70 @@ def test_cr04_non_ascii_tracked_file_is_scanned(tmp_path):
     _git(repo, "add", "-A")
     res = audit_path(repo)
     assert res["status"] == "violations"
+
+
+# --------------------------- CR-05 ---------------------------
+
+from assistant_shared.security import NdaRemoteRule, normalize_remote  # noqa: E402
+
+NDA_RULE = NdaRemoteRule(forbidden_remote_substrings=("example.org/owner",), violation_message="CRITICAL: synthetic")
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "ssh://git@example.org:22/Owner/r.git",
+        "ssh://git@ssh.example.org:443/Owner/r.git",
+        "https://www.example.org/OWNER/r",
+        "git@example.org:owner/r.git",
+    ],
+)
+def test_cr05_normalize_remote_port_and_host_alias(url):
+    assert "example.org/owner" in normalize_remote(url)
+
+
+def test_cr05_normalize_remote_does_not_match_other_owner():
+    assert "example.org/owner" not in normalize_remote("ssh://git@ssh.example.org:443/other/r.git")
+
+
+@pytest.mark.parametrize("url", ["ssh://git@ssh.example.org:443/Owner/r.git", "ssh://git@example.org:22/owner/r.git"])
+def test_cr05_nda_origin_with_port_or_alias_is_violation(tmp_path, url):
+    repo = _init(tmp_path / "repo")
+    _git(repo, "remote", "add", "origin", url)
+    res = audit_path(repo, nda_rule=NDA_RULE)
+    assert res["violations"] == ["CRITICAL: synthetic"]
+
+
+def test_cr05_nda_second_remote_and_pushurl_are_checked(tmp_path):
+    repo = _init(tmp_path / "repo")
+    _git(repo, "remote", "add", "origin", "https://git.example.net/team/r.git")
+    _git(repo, "remote", "add", "personal", "https://example.org/owner/r.git")
+    assert audit_path(repo, nda_rule=NDA_RULE)["violations"] == ["CRITICAL: synthetic"]
+
+    repo2 = _init(tmp_path / "repo2")
+    _git(repo2, "remote", "add", "origin", "https://git.example.net/team/r.git")
+    _git(repo2, "remote", "set-url", "--push", "origin", "https://example.org/owner/r.git")
+    assert audit_path(repo2, nda_rule=NDA_RULE)["violations"] == ["CRITICAL: synthetic"]
+
+
+def test_cr05_nda_git_failure_is_fail_closed(tmp_path):
+    plain = tmp_path / "plain"
+    plain.mkdir()
+    (plain / "a.txt").write_text("synthetic\n", encoding="utf-8")
+    res = audit_path(plain, nda_rule=NDA_RULE)
+    assert res["status"] == "violations"
+    assert any("fail-closed" in v for v in res["violations"])
+    # без NDA-правила тот же каталог остаётся чистым
+    assert audit_path(plain)["status"] == "passed"
+
+
+def test_cr05_cli_checks_all_remotes_and_aliases(tmp_path):
+    nda_root = tmp_path / "tydex-work"
+    repo = _init(nda_root / "repo")
+    _git(repo, "remote", "add", "origin", "https://git.example.net/team/r.git")
+    _git(repo, "remote", "add", "backup", "ssh://git@ssh.github.com:443/DimaMuhannad/r.git")
+    assert audit_repository(repo) == 1
+
+    repo2 = _init(nda_root / "repo2")
+    _git(repo2, "remote", "add", "origin", "https://git.example.net/team/r.git")
+    assert audit_repository(repo2) == 0
