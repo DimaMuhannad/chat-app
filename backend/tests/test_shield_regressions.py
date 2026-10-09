@@ -225,3 +225,51 @@ def test_cr05_cli_checks_all_remotes_and_aliases(tmp_path):
     repo2 = _init(nda_root / "repo2")
     _git(repo2, "remote", "add", "origin", "https://git.example.net/team/r.git")
     assert audit_repository(repo2) == 0
+
+
+# --------------------------- CR-07 ---------------------------
+
+from assistant_shared.security import FORBIDDEN_FILES, SECRET_PATTERNS  # noqa: E402
+
+
+def _matches(text: str) -> list[str]:
+    return [name for name, pat in SECRET_PATTERNS if pat.search(text)]
+
+
+@pytest.mark.parametrize(
+    "sample, expected",
+    [
+        ("sk-ant-" + "api03-" + "A1b2C3d4" * 4, "OpenAI/Anthropic API Key"),
+        ("sk-" + "proj-" + "A1b2C3d4" * 4, "OpenAI/Anthropic API Key"),
+        ("-----BEGIN " + "PGP PRIVATE KEY BLOCK-----", "Private Key"),
+        ("-----BEGIN " + "ENCRYPTED PRIVATE KEY-----", "Private Key"),
+        ("-----BEGIN " + "PRIVATE KEY-----", "Private Key"),
+        ("-----BEGIN " + "OPENSSH PRIVATE KEY-----", "Private Key"),
+        ("gho_" + "a" * 36, "GitHub Personal Access Token"),
+        ("ghs_" + "a" * 36, "GitHub Personal Access Token"),
+        ("github_pat_" + "A1b2C3d4" * 8, "GitHub Personal Access Token"),
+        ("AKIA" + "ABCDEFGHIJKLMNOP", "AWS Access Key ID"),
+        ("xox" + "b-123456789012-abcdefghij", "Slack Token"),
+        ('{"api' + '_key": "' + "a" * 20 + '"}', "Generic Bearer Secret"),
+    ],
+)
+def test_cr07_real_secret_formats_are_detected(sample, expected):
+    assert expected in _matches(sample)
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["id_rsa", "id_ed25519", ".env.test", ".env.production.local", ".env.bak", "service-account-prod.json", ".npmrc", "a/b/id_ecdsa"],
+)
+def test_cr07_additional_forbidden_files(name):
+    assert any(p.search(name) for p in FORBIDDEN_FILES)
+
+
+@pytest.mark.parametrize("name", [".env.example", "README.md", "src/identity.py", "docs/account.json"])
+def test_cr07_ordinary_files_are_not_forbidden(name):
+    assert not any(p.search(name) for p in FORBIDDEN_FILES)
+
+
+def test_cr07_ordinary_code_has_no_false_positives():
+    assert _matches("risk-assessment-framework-document-for-the-team") == []
+    assert _matches("api_key = settings.get_api_key()") == []

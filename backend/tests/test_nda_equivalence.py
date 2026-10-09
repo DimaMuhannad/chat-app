@@ -107,6 +107,8 @@ def _secret_samples() -> dict[str, str]:
         "Telegram Bot Token": "123456789" + ":" + "a" * 35,
         "OpenAI/Anthropic API Key": "sk-" + "a" * 24,
         "Notion API Token": "ntn_" + "a" * 44,
+        "AWS Access Key ID": "AKIA" + "A" * 16,
+        "Slack Token": "xox" + "b-" + "1" * 12,
         GENERIC_BEARER: "api" + "_key" + " = " + "'" + "a" * 20 + "'",
     }
 
@@ -271,7 +273,7 @@ def test_s05_script_ignores_keywords_in_nda_repo(tmp_path):
 def test_s06_script_secret_patterns_include_generic_bearer(tmp_path):
     shield = _load_shield()
     names = [n for n, _ in shield.SECRET_PATTERNS]
-    assert len(names) == 7
+    assert len(names) == len(set(names))
     assert GENERIC_BEARER in names
     quote = "'"
     for key in ("API" + "_KEY", "api" + "_key"):
