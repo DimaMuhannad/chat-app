@@ -48,3 +48,24 @@ def test_wr08_lower_function_handles_non_strings_and_unicode(tmp_path):
         assert row["n"] is None
         assert row["c"] == "привет"
         assert row["b"] == b"A"
+
+
+def test_wr12_safe_server_defaults(monkeypatch) -> None:
+    """WR-12: по умолчанию loopback и без автоперезагрузки; credentials не сочетаются с wildcard-CORS."""
+    for name in ("HOST", "DEBUG", "CORS_ORIGINS"):
+        monkeypatch.delenv(name, raising=False)
+    s = Settings(_env_file=None)
+    assert s.HOST == "127.0.0.1"
+    assert s.DEBUG is False
+
+
+def test_wr12_wildcard_cors_has_no_credentials() -> None:
+    from fastapi.testclient import TestClient
+
+    from app.core.config import settings
+    from app.main import app
+
+    if "*" not in settings.CORS_ORIGINS:
+        return
+    resp = TestClient(app).get("/health", headers={"Origin": "https://evil.example"})
+    assert "access-control-allow-credentials" not in resp.headers

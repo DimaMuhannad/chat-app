@@ -45,7 +45,9 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
-        allow_credentials=True,
+        # Куки-авторизации нет, а credentials вместе с wildcard-origin отражают любой Origin: включаем
+        # их только при явном списке источников
+        allow_credentials="*" not in settings.CORS_ORIGINS,
         allow_methods=["*"],
         allow_headers=["*"],
     )
