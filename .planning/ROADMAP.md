@@ -38,10 +38,12 @@
 - [x] **Phase 1: Страховочная сеть и каркас** - baseline тестов, контракт import-linter, каркас второй синтетической персоны, локальный гейт (completed 2026-10-02)
 - [x] **Phase 2: Порты и домен без изменения поведения** - доменные сущности, async-порты (роли расписания разделены), конструкторная инъекция, внутрипроцессный EventBus (completed 2026-10-02)
 - [x] **Phase 3: Персона как данные** - persona.yaml и таблицы персон, 4 рабочих пространства из данных, NDA-правила как данные, промпты в Jinja2 со снимком, white-label UI (completed 2026-10-03)
-- [ ] **Phase 4: Владелец схемы БД и общая библиотека безопасности** - одна общая БД с миграциями, путь из настроек, WAL, единая security-библиотека, тонкий security_shield.py, pre-commit hook
-- [ ] **Phase 5: Единый HITL-примитив** - requires_confirmation и pending_confirmations для Telegram и Web, DELETE без подтверждения возвращает 409
-- [ ] **Phase 6: Готовность к мультитенантности** - без глобального GEMINI_API_KEY, WorkspaceScope внутри assistant-core, Zero-Trust scopes, две персоны без cross-talk, метрика завершения
-- [ ] **Phase 7: Git-источники и дашборды Notion** - любое число репозиториев по SSH, оценка прогресса по коммитам, обновление Notion только через HITL, NDA-git не уходит в LLM
+- [x] **Phase 4: Владелец схемы БД и общая библиотека безопасности** - одна общая БД с миграциями, путь из настроек, WAL, единая security-библиотека, тонкий security_shield.py, pre-commit hook (completed 2026-10-03)
+- [x] **Phase 5: Единый HITL-примитив** - requires_confirmation и pending_confirmations для Telegram и Web, DELETE без подтверждения возвращает 409 (completed 2026-10-03)
+- [x] **Phase 6: Готовность к мультитенантности** - без глобального GEMINI_API_KEY, WorkspaceScope внутри assistant-core, Zero-Trust scopes, две персоны без cross-talk, метрика завершения (completed 2026-10-04)
+- [x] **Phase 7: Git-источники и дашборды Notion** - любое число репозиториев по SSH, оценка прогресса по коммитам, обновление Notion только через HITL, NDA-git не уходит в LLM (completed 2026-10-04)
+- [x] **Phase 8: Исполнительный инструментальный контур (Tool Calling)** - Function Calling в SecretaryDialogEngine, HITL-карточки действий, pending_sync (completed 2026-10-05)
+- [x] **Phase 9: Динамическое меню и интерфейс Telegram-бота** - CommandRegistry, декларативные алиасы, аудит эргономики; план 09-03 (контекстные клавиатуры) перенесён в проект assistant-core (completed 2026-10-09)
 
 ## Phase Details
 
@@ -334,7 +336,7 @@ Plans:
   6. При сбое Google Calendar API событие сохраняется в локальной SQLite как `pending_sync`, а в чат выводится кнопка `[🔄 Повторить синхронизацию]` (D-04).
   7. Сквозной интеграционный тест и единый Quality Gate (`scripts/gate.py`) подтверждают 100% pass на обоих репозиториях.
 
-**Plans:** 3/4 plans executed (4/4 planned)
+**Plans:** 4/4 plans complete
 
 Plans:
 **Wave 1**
@@ -349,10 +351,25 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 - [x] 08-04-PLAN.md — ACT-01..04 (Сквозное интеграционное тестирование, симуляция сценария 'письмо Новиковой' и Quality Gate)
 
+### Phase 9: Динамическое меню и интерфейс Telegram-бота, декларативные алиасы и аудит эргономики
+
+**Goal**: Модульный реестр команд бота (CommandRegistry) по активным коннекторам персоны, декларативные русскоязычные алиасы и управление видимостью из чата, аудит эргономики и производительности.
+**Depends on**: Phase 8
+**Репозитории**: assistant-core
+**Requirements**: UXQ-01, UXQ-02, UXQ-04 (UXQ-03 перенесён вместе с 09-03)
+
+**Plans:** 3/4 plans complete (09-03 deferred → проект assistant-core)
+
+Plans:
+- [x] 09-01-PLAN.md — CommandRegistry и динамический set_my_commands
+- [x] 09-02-PLAN.md — декларативные алиасы, FastIntentRouter fast-path, управление меню из чата
+- [ ] 09-03-PLAN.md — контекстные Reply-клавиатуры по времени суток (DEFERRED: перенесено в бэклог и в отдельный GSD-проект /opt/assistant-core, решение владельца 2026-10-09)
+- [x] 09-04-PLAN.md — edge caching (< 250 мс), телеметрия 👍/👎, проактивные алерты коннекторов, Quality Gate
+
 ## Progress
 
 **Execution Order:**
-Фазы выполняются в числовом порядке: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
+Фазы выполняются в числовом порядке: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -364,6 +381,7 @@ Plans:
 | 6. Готовность к мультитенантности | 6/6 | Complete | 2026-10-04 |
 | 7. Git-источники и дашборды Notion | 4/4 | Complete | 2026-10-04 |
 | 8. Исполнительный инструментальный контур | 4/4 | Complete | 2026-10-05 |
+| 9. Динамическое меню и интерфейс Telegram-бота | 3/4 (09-03 перенесён) | Complete | 2026-10-09 |
 
 ## Стратегический бэклог (Milestone v2.0+)
 
