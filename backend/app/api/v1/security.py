@@ -1,5 +1,4 @@
 from pathlib import Path
-import subprocess
 import time
 from typing import Any
 from fastapi import APIRouter, HTTPException, Query
@@ -8,14 +7,8 @@ from pydantic import BaseModel
 from app.core.config import settings
 from app.db import DatabaseService
 from assistant_shared.security import (
-    DEFAULT_REMOTE_VIOLATION,
-    FORBIDDEN_FILES,
-    NdaRemoteRule,
-    SECRET_PATTERNS,
     audit_path,
     nda_rule_for,
-    normalize_remote,
-    run_cmd,
 )
 
 router = APIRouter(prefix="/security", tags=["Security Shield"])

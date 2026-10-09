@@ -24,6 +24,10 @@ from pathlib import Path
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+import assistant_shared.security.auditor as shared_auditor
+import assistant_shared.security.runner as shared_runner
+from assistant_shared.security import DEFAULT_REMOTE_VIOLATION, FORBIDDEN_FILES, SECRET_PATTERNS
+
 from app.api.v1 import security
 from app.core.config import settings
 from app.db import DatabaseService
@@ -167,7 +171,7 @@ def test_n06_forbidden_file_names_flagged(tmp_path, name):
     assert res["status"] == "violations"
 
 
-@pytest.mark.parametrize("name", [n for n, _ in security.SECRET_PATTERNS])
+@pytest.mark.parametrize("name", [n for n, _ in SECRET_PATTERNS])
 def test_n07_secret_patterns_flagged(tmp_path, name):
     samples = _secret_samples()
     assert name in samples
@@ -195,8 +199,8 @@ def test_n09_git_timeout_returns_error_tuple(monkeypatch):
     def boom(*args, **kwargs):
         raise subprocess.TimeoutExpired(cmd="git", timeout=10)
 
-    monkeypatch.setattr(security.subprocess, "run", boom)
-    code, text = security.run_cmd(["git", "status"])
+    monkeypatch.setattr(shared_runner.subprocess, "run", boom)
+    code, text = shared_runner.run_cmd(["git", "status"])
     assert code == 1
     assert isinstance(text, str)
 
@@ -317,7 +321,7 @@ def test_s09_script_read_error_is_violation(tmp_path, monkeypatch):
     def boom(*args, **kwargs):
         raise OSError("synthetic denied")
 
-    monkeypatch.setattr(shield, "open", boom, raising=False)
+    monkeypatch.setattr(shared_auditor, "open", boom, raising=False)
     found = shield.check_file_content(target, is_public_repo=True)
     count = len(found)
     flagged = "Read error" in found[0]
@@ -330,12 +334,12 @@ def test_s09_script_read_error_is_violation(tmp_path, monkeypatch):
 
 def test_p02_web_patterns_subset_of_script():
     shield = _load_shield()
-    web = {n: p.pattern for n, p in security.SECRET_PATTERNS}
+    web = {n: p.pattern for n, p in SECRET_PATTERNS}
     script = {n: p.pattern for n, p in shield.SECRET_PATTERNS}
     assert set(web) == set(script)
     same = all(web[n] == script[n] for n in web)
     assert same
-    assert [p.pattern for p in security.FORBIDDEN_FILES] == [p.pattern for p in shield.FORBIDDEN_FILES]
+    assert [p.pattern for p in FORBIDDEN_FILES] == [p.pattern for p in shield.FORBIDDEN_FILES]
 
 
 def test_p03_shield_copies_identical():
@@ -365,7 +369,7 @@ async def test_d01_owner_rules_come_from_data():
     assert rule is not None
     assert set(rule.forbidden_remote_substrings) == set(owner["forbidden_remote_substrings"])
     assert len(rule.forbidden_remote_substrings) == len(owner["forbidden_remote_substrings"])
-    same_message = rule.violation_message == (owner["remote_violation_message"] or security.DEFAULT_REMOTE_VIOLATION)
+    same_message = rule.violation_message == (owner["remote_violation_message"] or DEFAULT_REMOTE_VIOLATION)
     assert same_message
     # признак NDA - допуск пространства: у остальных пространств правила нет
     for row in rows:
@@ -440,7 +444,7 @@ async def test_overview_and_audit_503_without_workspaces(monkeypatch):
 
 def test_normalize_remote_matches_case_and_scp_forms():
     """WR-07: регистр, scp-форма, ssh:// и .git не обходят подстроку запрещённого remote."""
-    from app.api.v1.security import normalize_remote
+    from assistant_shared.security import normalize_remote
 
     needle = normalize_remote("example.org/Owner")
     for url in (
