@@ -61,3 +61,23 @@ def test_cr01_git_failure_is_fail_closed(tmp_path, capsys):
         get_staged_or_tracked_files(not_a_repo, check_staged_only=True)
     assert audit_repository(not_a_repo) == 1
     assert "SECURITY SHIELD ERROR" in capsys.readouterr().out
+
+
+# --------------------------- CR-03 ---------------------------
+
+
+def test_cr03_staged_secret_is_found_after_worktree_cleanup(tmp_path, capsys):
+    repo = _init(tmp_path / "repo")
+    (repo / "leak.txt").write_text(SECRET_LINE, encoding="utf-8")
+    _git(repo, "add", "leak.txt")
+    (repo / "leak.txt").write_text("clean\n", encoding="utf-8")  # рабочая копия чистая, индекс нет
+    assert audit_repository(repo) == 1
+    assert "Generic Bearer Secret" in capsys.readouterr().out
+
+
+def test_cr03_staged_clean_version_passes_despite_dirty_worktree(tmp_path):
+    repo = _init(tmp_path / "repo")
+    (repo / "ok.txt").write_text("clean\n", encoding="utf-8")
+    _git(repo, "add", "ok.txt")
+    (repo / "ok.txt").write_text(SECRET_LINE, encoding="utf-8")  # не проиндексировано, в коммит не попадёт
+    assert audit_repository(repo) == 0
