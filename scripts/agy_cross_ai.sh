@@ -8,7 +8,7 @@
 #
 # Why it never commits: agy is observed to report SUCCESS on incomplete work
 # (2026-10-09: 1 of 8 files), so its result is never trusted. The patch is applied to
-# the WORKING TREE ONLY (new files as intent-to-add so `git diff` shows them), checked by
+# the WORKING TREE ONLY (new files marked with `git add -N` so `git diff` shows them), checked by
 # sentinels and the quality gate, and left uncommitted for the Claude orchestrator to
 # review and commit. agy itself is only ever run through scripts/agy_task.sh (systemd-run jail).
 #
@@ -67,6 +67,114 @@ grep -q '[^[:space:]]' "$WORK/prompt" || fail 2 "пустой промпт на 
 TOP="$(git -C "${REPO:-.}" rev-parse --show-toplevel 2>/dev/null)" || fail 2 "${REPO:-текущая папка} — не git-репозиторий"
 TOP="$(realpath "$TOP")"
 
+# ---------- python helper (path analysis) ----------
+cat > "$WORK/helper.py" <<'PY'
+import posixpath, re, subprocess, sys
+
+PROTECTED = (".planning/", ".agents/", ".claude/", ".agy/", ".githooks/", ".git/", ".importlinter",
+             "scripts/gate.py", "scripts/agy_task.sh", "scripts/agy_cross_ai.sh", "scripts/security_shield.py")
+
+
+def git_bytes(top, *args):
+    return subprocess.run(["git", "-C", top, *args], capture_output=True, check=True).stdout
+
+
+def dirty(top):
+    """Paths with changes outside .planning/ (tracked or untracked)."""
+    parts = git_bytes(top, "status", "--porcelain=v1", "-z", "--untracked-files=all").split(b"\0")
+    i, out = 0, []
+    while i < len(parts):
+        rec = parts[i]
+        i += 1
+        if len(rec) < 4:
+            continue
+        paths = [rec[3:].decode(errors="replace")]
+        if rec[0:1] in (b"R", b"C") or rec[1:2] in (b"R", b"C"):
+            paths.append(parts[i].decode(errors="replace"))
+            i += 1
+        if any(not p.startswith(".planning/") for p in paths):
+            out += paths
+    return out
+
+
+def touched(top, patch):
+    parts = git_bytes(top, "apply", "--numstat", "-z", patch).split(b"\0")
+    i, out = 0, []
+    while i < len(parts):
+        rec = parts[i]
+        i += 1
+        f = rec.split(b"\t", 2)
+        if len(f) < 3:
+            continue
+        if f[2] == b"":
+            out += [parts[i].decode(), parts[i + 1].decode()]
+            i += 2
+        else:
+            out.append(f[2].decode())
+    return [posixpath.normpath(p) for p in dict.fromkeys(out)]
+
+
+def is_protected(path):
+    for pref in PROTECTED:
+        if pref.endswith("/"):
+            if path == pref[:-1] or path.startswith(pref):
+                return True
+        elif path == pref or path.startswith(pref + "/"):
+            return True
+    return False
+
+
+def declared(prompt_file, top):
+    text = open(prompt_file, errors="replace").read()
+    blocks = re.findall(r"<files>(.*?)</files>", text, re.DOTALL)
+    if not blocks:
+        return None
+    result = []
+    for block in blocks:
+        for tok in re.split(r"[,\n]", block):
+            tok = tok.strip().strip("`").strip()
+            tok = re.sub(r"^[-*]\s+", "", tok).strip().strip("`").strip()
+            tok = re.sub(r"\s*\(.*\)\s*$", "", tok).strip().strip("`").strip()
+            if not tok or "*" in tok or ("/" not in tok and "." not in tok):
+                continue
+            if tok.startswith("/"):
+                if tok == top or tok.startswith(top + "/"):
+                    tok = tok[len(top):].lstrip("/")
+                else:
+                    print(f"предупреждение: путь {tok} вне репозитория — не проверяется", file=sys.stderr)
+                    continue
+            keep_dir = tok.endswith("/")
+            tok = posixpath.normpath(tok) + ("/" if keep_dir else "")
+            result.append(tok)
+    return list(dict.fromkeys(result))
+
+
+cmd = sys.argv[1]
+if cmd == "dirty":
+    sys.stdout.write("\n".join(dirty(sys.argv[2])))
+elif cmd == "protected":
+    sys.stdout.write("\n".join(p for p in touched(sys.argv[2], sys.argv[3]) if is_protected(p)))
+elif cmd == "missing":
+    top, patch, prompt = sys.argv[2:5]
+    decl = declared(prompt, top)
+    if decl is None:
+        print("предупреждение: в плане нет элементов files — полнота правок не проверяется", file=sys.stderr)
+    else:
+        t = touched(top, patch)
+        miss = [d for d in decl if not any(p == d.rstrip("/") or p.startswith(d if d.endswith("/") else d + "/")
+                                            for p in t)]
+        sys.stdout.write("\n".join(miss))
+PY
+
+list_dirty() { python3 "$WORK/helper.py" dirty "$TOP"; }
+
+DIRTY="$(list_dirty)"
+if [ -n "$DIRTY" ]; then
+  say "рабочее дерево изменено вне .planning/ — патч агента не должен смешиваться с чужими правками. Закоммить или убери:"
+  sed 's/^/  /' <<<"$DIRTY" >&2
+  fail 10 "отказ: грязное дерево; после коммита GSD предложит повторить"
+fi
+
 # ---------- revert / signals ----------
 revert_patch() {
   [ "$APPLIED" = 1 ] || return 0
@@ -78,6 +186,11 @@ revert_patch() {
     git -C "$TOP" reset -q -- "${CREATED[@]}" 2>/dev/null || true
   fi
   APPLIED=0
+  local left; left="$(list_dirty 2>/dev/null || true)"
+  if [ -n "$left" ]; then
+    say "предупреждение: после отката в дереве остались изменения вне .planning/:"
+    sed 's/^/  /' <<<"$left" >&2
+  fi
   return 0
 }
 
@@ -138,7 +251,7 @@ JOB_ID_RAW="${R[job]:-}"
 if [[ "$JOB_ID_RAW" =~ ^[0-9]{8}-[0-9]{6}-[0-9]+$ ]]; then JOB_ID="$JOB_ID_RAW"; fi
 
 if [ "$AGY_RC" -ne 0 ]; then
-  [ -n "$JOB_ID" ] && say "задание агента: $JOB_ID"
+  [ -n "$JOB_ID" ] && say "задание агента: $JOB_ID (если сохранено: scripts/agy_task.sh diff $JOB_ID / clean $JOB_ID)"
   say "agy_task.sh завершился с кодом $AGY_RC; GSD предложит повторить, передать план исполнителю Claude или прервать"
   exit "$AGY_RC"
 fi
@@ -151,12 +264,40 @@ JOB_DIR="$JOBS_DIR/$JOB_ID"
 PATCH="$JOB_DIR/changes.patch"
 [ -s "$PATCH" ] || fail 11 "патч агента отсутствует или пуст: $PATCH (задание $JOB_ID)"
 
+HINT="GSD предложит повторить, передать план исполнителю Claude или прервать"
+INSPECT="осмотр: scripts/agy_task.sh diff $JOB_ID ; удаление: scripts/agy_task.sh clean $JOB_ID"
+
+# ---------- sentinels on the validated patch (nothing applied yet) ----------
+PROTECTED_HIT="$(python3 "$WORK/helper.py" protected "$TOP" "$PATCH")"
+if [ -n "$PROTECTED_HIT" ]; then
+  say "патч агента трогает защищённые пути:"
+  sed 's/^/  /' <<<"$PROTECTED_HIT" >&2
+  fail 12 "отказ (задание $JOB_ID); $INSPECT; $HINT"
+fi
+
+MISSING="$(python3 "$WORK/helper.py" missing "$TOP" "$PATCH" "$WORK/prompt")"
+if [ -n "$MISSING" ]; then
+  say "агент не тронул объявленные в плане файлы (известный сбой: SUCCESS при неполной работе):"
+  sed 's/^/  /' <<<"$MISSING" >&2
+  fail 13 "неполное выполнение (задание $JOB_ID); $INSPECT; $HINT"
+fi
+
+if ! git -C "$TOP" apply --check --whitespace=nowarn "$PATCH" 2>"$WORK/check.err"; then
+  cat "$WORK/check.err" >&2
+  fail 14 "патч не применяется (задание $JOB_ID, $PATCH); $INSPECT; $HINT"
+fi
+
 # ---------- apply (working tree only) ----------
+# Plain `git apply` + `git add -N` for created files. NOT `git apply --intent-to-add`:
+# in git 2.43 it rewrites the index with only the patched files, dropping all other entries.
 mapfile -t CREATED < <(git -C "$TOP" apply --summary "$PATCH" | sed -n 's/^ create mode [0-7]* //p')
 APPLIED=1
-if ! git -C "$TOP" apply --intent-to-add --whitespace=nowarn "$PATCH"; then
-  APPLIED=0
-  fail 14 "патч не применяется (задание $JOB_ID, $PATCH)"
+if ! git -C "$TOP" apply --whitespace=nowarn "$PATCH"; then
+  APPLIED=0  # git apply is atomic: nothing was changed
+  fail 14 "патч не применился (задание $JOB_ID, $PATCH); $INSPECT; $HINT"
+fi
+if [ "${#CREATED[@]}" -gt 0 ]; then
+  git -C "$TOP" add -N -- "${CREATED[@]}" || { revert_patch || exit 16; fail 14 "не удалось пометить новые файлы intent-to-add (задание $JOB_ID)"; }
 fi
 
 # ---------- gate ----------
@@ -173,7 +314,7 @@ if [ "$GATE_RC" -ne 0 ]; then
   say "гейт качества красный (код $GATE_RC), последние строки:"
   tail -n 40 "$GATE_LOG" >&2 || true
   revert_patch || exit 16
-  fail 15 "патч откачен (задание $JOB_ID); GSD предложит повторить, передать план исполнителю Claude или прервать"
+  fail 15 "патч откачен (задание $JOB_ID); $INSPECT; $HINT"
 fi
 APPLIED=0
 
