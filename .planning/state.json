@@ -1,7 +1,7 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": null,
+  "milestone": "v2.0",
   "phases": [
     {
       "number": "1",
@@ -31,18 +31,28 @@
     {
       "number": "6",
       "name": "Готовность к мультитенантности",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "number": "7",
       "name": "Git-источники и дашборды Notion",
-      "status": "pending"
+      "status": "complete"
+    },
+    {
+      "number": "8",
+      "name": "Исполнительный инструментальный контур",
+      "status": "complete"
+    },
+    {
+      "number": "9",
+      "name": "Динамическое меню и интерфейс Telegram-бота",
+      "status": "complete"
     }
   ],
   "next": {
-    "command": "/gsd:plan-phase 6",
-    "label": "Plan Phase 6",
-    "reason": "Phase 5 of 7 complete · 71% · ready to plan phase 6"
+    "command": "/gsd:progress",
+    "label": "Show progress",
+    "reason": "Unsure of state — showing progress"
   },
-  "updated_at": "2026-10-04T10:23:00.000Z"
+  "updated_at": "2026-10-09T12:05:26.548Z"
 }

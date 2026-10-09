@@ -1,39 +1,36 @@
 ---
 gsd_state_version: "1.0"
 milestone: v2.0
-current_phase: 9
-current_phase_name: Динамическое меню и интерфейс Telegram-бота, декларативные алиасы и аудит эргономики
-status: milestone_complete_pending
-stopped_at: Plan 09-02 completed (Declarative Aliases, FastIntentRouter Fast-Path, Conversational Menu Management)
-last_updated: "2026-10-09T08:33:28.644Z"
+status: Awaiting next milestone
+stopped_at: Milestone v2.0 archived (override closeout); development moves to /opt/assistant-core GSD project
+last_updated: "2026-10-09T12:05:26.494Z"
 last_activity: 2026-10-09
-last_activity_desc: Plan 09-02 executed (FastIntentRouter protocol integration, chat menu hide/show, custom alias CRUD, /menu command, 413 tests pass, Quality Gate GREEN)
-state_head: c6ac2a41bf159d876b12a73753d77019214f7263
+last_activity_desc: Milestone v2.0 completed and archived
+state_head: cfadfcdc766c6ad5c09decfa07aa006e11d2285b
 progress:
   total_phases: 9
   completed_phases: 9
   total_plans: 44
   completed_plans: 43
-  percent: 100
+current_phase: 9
+current_phase_name: Динамическое меню и интерфейс Telegram-бота, декларативные алиасы и аудит эргономики
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-02)
+See: .planning/PROJECT.md (updated 2026-10-09)
 
 **Core value:** Профиль владельца целиком живёт в данных, а платформа работает для любой персоны — без регрессии поведения и без ослабления HITL и air-gap NDA.
-**Current focus:** Закрытие цикла v2.0 (фазы 1–9 выполнены; 09-03 перенесён в проект assistant-core). Дальнейшая разработка ассистента — отдельный GSD-проект в /opt/assistant-core.
+**Current focus:** v2.0 закрыт. Планирование chat-app заморожено; следующий шаг — `/gsd-onboard` в `/opt/assistant-core` (отдельный GSD-проект ассистента).
 
 ## Current Position
 
-Phase: 9 (Динамическое меню и интерфейс Telegram-бота)
-Plan: 09-04 (completed); 09-03 deferred → проект assistant-core
-Status: Milestone v2.0 ready for audit and completion
-Last activity: 2026-10-09 - Phase 4 code review fixes (04-REVIEW-FIX.md), backfilled 06-01..06-04 summaries, roadmap synced
-
-Progress: [██████████] 100% (43/44 plans complete, 1 deferred)
+Phase: Milestone v2.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-10-09 — Milestone v2.0 completed and archived
 
 ## Состояние окружения: ЗАМОРОЖЕН (с 2026-10-01)
 
@@ -164,7 +161,6 @@ None yet.
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
-| 261009-bam | Делегирование простых задач GSD агентам agy через cross-AI и обёртку | 2026-10-09 | c6ac2a4 | [261009-bam-delegirovanie-prostyh-zadach-gsd-agentam](./quick/261009-bam-delegirovanie-prostyh-zadach-gsd-agentam/) |
 
 ## Deferred Items
 
@@ -181,3 +177,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 Last session: 2026-10-04T21:35:00.000Z
 Stopped at: Phase 07 plans generated (4 plans ready), ready for Plan 07-01
 Resume file: .planning/phases/07-git-istochniki-i-dashbordy-notion/07-01-PLAN.md
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
