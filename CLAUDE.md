@@ -55,6 +55,7 @@ This project is an advanced AI Agent IDE and Autonomous Assistant platform consi
   scripts/agy_task.sh run --repo <path> --mode read|edit <<< "<task>"
   ```
   Never run `agy` directly in a repo: its `--mode plan` and `--sandbox` do not isolate file access. The wrapper jails it (systemd-run), refuses NDA workspaces, and returns edits as a patch for Claude to review, apply and test.
+  **Default routing (owner decision 2026-10-09, no need to ask):** bulk reading/inventories/log summaries, boilerplate code and test drafts, docs/translation, and uniform mechanical edits across ≥4 files go to agy via the wrapper; GSD planners mark such plans `cross_ai: true`. Always kept with Claude: research, discuss/planning, architecture, security/NDA/HITL logic, code review, verification, and edits of 1–3 files. Claude always reads the full patch, runs `scripts/gate.py`, and commits; if agy fails or returns incomplete work, Claude does the task itself.
   Mechanical GSD plans can be marked `cross_ai: true`: execute-phase then runs `scripts/agy_cross_ai.sh` (jail, sentinels, gate, auto-revert) and leaves changes uncommitted for Claude to review, commit and `agy_task.sh clean`; never use GSD's `--agy`/`--antigravity` reviewer lanes (no jail).
 
 ## 4. Coding Standards & Conventions
