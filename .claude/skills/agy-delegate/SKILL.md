@@ -1,18 +1,35 @@
 ---
 name: agy-delegate
-description: Delegate routine but token-heavy work to Antigravity (agy, Gemini) agents via scripts/agy_task.sh to save Claude subscription tokens — bulk reading/summarizing of many files or logs, code inventories and hardcode searches, boilerplate code and test drafts, documentation formatting and translation, mechanical tasks from GSD phase plans. Use whenever a task would require reading a lot of material but produces a short result, or is repetitive boilerplate that Claude would only need to review.
+description: Delegate routine but token-heavy work to Antigravity (agy, Gemini) agents via scripts/agy_task.sh to save Claude subscription tokens — bulk reading/summarizing of many files or logs, code inventories and hardcode searches, boilerplate code and test drafts, documentation formatting and translation, and execution of mechanical GSD plans marked `cross_ai: true` through GSD's cross-AI execution (scripts/agy_cross_ai.sh). Use whenever a task would require reading a lot of material but produces a short result, or is repetitive boilerplate that Claude would only need to review.
 ---
 
 # Делегирование рутины агентам Antigravity
 
 Цель — экономия токенов подписки Claude. Агент `agy` (Gemini) читает и пишет много за счёт квоты Antigravity. Claude получает только краткий результат, проверяет его и отвечает за итог.
 
+## Маршрутизация GSD
+
+**Только Claude:** исследование (research), обсуждение (discuss), планирование (plan) и проверка плана, ревью (в том числе code review), verify, secure, debug, UAT и все коммиты. Планирование и исследование агентам не отдаются никогда.
+
+**Агент agy:** исполнение механических планов с `cross_ai: true` во frontmatter PLAN.md, а также чтение, шаблонный код и документация через обёртку `scripts/agy_task.sh`.
+
+Помечать план `cross_ai: true` можно, только если одновременно выполняется всё:
+
+- план чисто механический (переименования, перенос литералов в конфиг, однотипные правки, шаблонный код);
+- в элементе `files` каждой задачи точные пути относительно корня репозитория;
+- в плане нет решений, HITL, безопасности и NDA-логики;
+- правки не касаются защищённых путей: `.planning/`, `.agents/`, `.claude/`, `.agy/`, `.githooks/`, `.git/`, `.importlinter`, `scripts/gate.py`, `scripts/agy_task.sh`, `scripts/agy_cross_ai.sh`, `scripts/security_shield.py`;
+- для выполнения не нужно запускать тесты, сервисы и БД внутри «клетки» (там нет `.venv`, базы и `/opt`);
+- репозиторий — chat-app или assistant-core (гейт покрывает только их).
+
+Планы без флага идут к обычному исполнителю Claude.
+
 ## Когда делегировать
 
 - **Чтение и сводка больших объёмов:** инвентаризация кода (эндпоинты, таблицы, вызовы), поиск хардкода по всему репозиторию, сводка длинных логов и документов.
 - **Шаблонный код и тесты:** черновики pytest-тестов, фикстур, типовых модулей и адаптеров по готовому образцу.
 - **Документация и перевод:** оформление, перевод и синхронизация документов, черновики описаний.
-- **Простые задачи фаз GSD:** механические шаги плана — переименования, перенос строк в конфиг, однотипные правки во многих файлах.
+- **Простые задачи фаз GSD:** механические планы с `cross_ai: true` (см. ниже).
 
 ## Когда НЕ делегировать
 
@@ -20,9 +37,9 @@ description: Delegate routine but token-heavy work to Antigravity (agy, Gemini) 
 - Мелочь на 1–3 файла: один вызов агента занимает от ~20 секунд до нескольких минут, быстрее сделать самому.
 - Задачи, где нужно запускать тесты, сервисы или обращаться к БД: в «клетке» агент не видит `.venv`, базу и `/opt`.
 - Закрытые NDA-пространства — скрипт откажет сам (air-gap). Не пытайся обойти отказ.
-- Никогда не вставляй в текст задачи секреты, токены и содержимое NDA-документов.
+- Никогда не вставляй в текст задачи секреты, токены и содержимое NDA-документов (скрипт откажет с кодом 4).
 
-## Как вызывать
+## Как вызывать обёртку
 
 Только через обёртку. `agy --mode plan` и `--sandbox` НЕ изолируют чтение и запись (проверено 2026-10-01). Запускать `agy` напрямую в репозиториях запрещено.
 
@@ -41,10 +58,62 @@ scripts/agy_task.sh stats             # расход токенов Antigravity
 ```
 
 - Модель по умолчанию — `gemini-3.8-flash-high` (из `.agy/config`). Для простого чтения и перевода `--model gemini-3.8-flash-medium` заметно быстрее.
+- Последняя строка stdout каждого завершённого запуска: `AGY_RESULT job=… status=… changed=0|1 patch=…|- rc=N model=… input_tokens=N output_tokens=N`. Читай результат только по ней и по коду возврата.
 
-### Профили агентов (`.agents/agents/<имя>/agent.md`)
+### Коды возврата `agy_task.sh run`
 
-Обёртка подставляет профиль сам: `reader` для `--mode read`, `gsd-executor` для `--mode edit`. Другой профиль выбирается через `--agent`.
+| Код | Значение |
+|---|---|
+| 0 | успех: статус SUCCESS и непустой ответ |
+| 1 | общая ошибка |
+| 3 | отказ NDA / air-gap (закрытый путь или remote) |
+| 4 | отказ: похожие на секреты строки в копии или в тексте задачи |
+| 5 | пустой ответ агента после повтора |
+| 6 | статус не SUCCESS (включая NO_JSON), ответ непустой |
+
+Если правки есть (`changed=1`), задание сохраняется при любом коде.
+
+## Исполнение планов через cross-AI
+
+Подключено в `.planning/config.json`: `workflow.cross_ai_execution=true`, `workflow.cross_ai_command="scripts/agy_cross_ai.sh"`, `workflow.cross_ai_timeout=900`. Для плана с `cross_ai: true` execute-phase подаёт текст плана на stdin адаптера; планы без флага не затрагиваются.
+
+Что делает `scripts/agy_cross_ai.sh`:
+
+1. Отказывает при грязном дереве вне `.planning/` (код 10): патч не должен смешиваться с чужими правками. Изменения в `.planning/` (STATE.md и др.) допустимы.
+2. Запускает `agy_task.sh run --mode edit` с профилем `gsd-executor` и таймаутом агента 300 с (две попытки и гейт укладываются в 900 с GSD).
+3. Разбирает только последнюю строку `AGY_RESULT`, путь к патчу вычисляет сам.
+4. Сентинелы: пустой патч или подделанный результат (11); защищённые пути (12); покрытие объявленных в `files` путей (13) — агент уже отвечал SUCCESS, изменив 1 файл из 8; `git apply --check` (14).
+5. Применяет патч только в рабочее дерево (`git apply`, новые файлы — `git add -N`), коммитов не делает.
+6. Запускает `python3 scripts/gate.py`. Красный гейт или SIGTERM по таймауту GSD — патч откатывается автоматически (15 / 143).
+7. Печатает SUMMARY в markdown на stdout; задание агента сохраняется.
+
+### Коды возврата адаптера
+
+| Код | Значение |
+|---|---|
+| 0 | успех, правки в рабочем дереве, не закоммичены |
+| 2 | неверные аргументы, пустой промпт, не git-репозиторий |
+| 1, 3, 4, 5, 6 | переданы из `agy_task.sh` (см. таблицу выше) |
+| 10 | грязное дерево вне `.planning/` |
+| 11 | нет валидного `AGY_RESULT`, статус не SUCCESS, нет правок или патча |
+| 12 | патч трогает защищённый путь |
+| 13 | объявленный в плане файл не тронут |
+| 14 | патч не применяется |
+| 15 | гейт красный, патч откачен |
+| 16 | откат не удался — вмешательство вручную |
+| 143 | SIGTERM/SIGINT/SIGHUP, патч откачен, если был применён |
+
+### Обязанности Claude после успеха (обязательно)
+
+1. Прочитать `git diff` целиком (новые файлы видны благодаря `git add -N`) и сверить с планом.
+2. Закоммитить атомарно по правилам проекта.
+3. Выполнить `scripts/agy_task.sh clean <JOB_ID>`.
+
+Если в фазе несколько планов с `cross_ai`, коммить после каждого: следующий запуск на грязном дереве откажет с кодом 10 — после коммита выбери повтор. При любой ошибке GSD предлагает: повторить / пропустить (исполнитель Claude) / прервать. Сохранённое задание сначала осмотри `agy_task.sh diff <JOB_ID>`, потом `clean`.
+
+## Профили агентов (`.agents/agents/<имя>/agent.md`)
+
+Обёртка подставляет профиль сама: `reader` для `--mode read`, `gsd-executor` для `--mode edit`. Другой профиль выбирается через `--agent`.
 
 | Агент | Для чего | Режим |
 |---|---|---|
@@ -63,15 +132,44 @@ scripts/agy_task.sh stats             # расход токенов Antigravity
 - Агент не видит этот разговор. Задача должна быть самодостаточной: что сделать, в каких файлах, формат ответа (одна строка на пункт, `файл:строка`), лимит объёма.
 - Копия содержит только закоммиченные и изменённые отслеживаемые файлы. Неотслеживаемые файлы и файлы-секреты в неё не попадают.
 
+## Запреты
+
+- Не использовать reviewer-режимы GSD `--agy` и `--antigravity`: они запускают agy через PATH без jail. Пока они не проведены через обёртку — запрещены.
+- Не запускать `agy`, `/root/.local/bin/agy` и шим `/usr/local/bin/agy` напрямую: шим только подменяет HOME и ничего не изолирует.
+- Планирование и исследование не делегируются. Профили `gsd-phase-agent` и `gsd-plan-executor` удалены 2026-10-09 (требовали `run_command` и файлы вне «клетки»).
+- Не добавлять `run_command` в профили агентов.
+
+## Надёжность agy
+
+Smoke-тест 2026-10-09: agy вернул SUCCESS, отредактировав 1 файл из 8 запрошенных (48,8 тыс. входных токенов); второй запуск дважды вернул пустой ответ и был прерван. Поэтому статусу доверять нельзя: в ответах на чтение выборочно проверяй 2–3 факта; результат правки считается принятым только после сентинелов адаптера, зелёного гейта и ревью диффа Claude.
+
 ## Проверка результата (обязательно)
 
 1. **Ответ на чтение.** Выборочно сверь 2–3 факта с кодом (`grep`, `Read`). Статус `ERROR` при полном ответе — известная нестабильность agy: проверь ответ на полноту, при сомнении повтори задачу.
-2. **Патч.** Прочитай `changes.patch` целиком. Применяй только проверенное: `git -C <repo> apply <patch>`.
-3. После применения запусти тесты сам, по CLAUDE.md — 100% в обоих репозиториях:
-   - `/opt/chat-app/backend/.venv/bin/pytest backend/tests`
-   - `/opt/assistant-core/.venv/bin/pytest /opt/assistant-core/tests`
-
-   Важно: до Фазы 0 тесты chat-app пишут в боевую `assistant.db` — запускай их только на копии базы.
+2. **Патч.** Прочитай `changes.patch` (или `git diff` после cross-AI) целиком. Применяй только проверенное: `git -C <repo> apply <patch>`.
+3. После применения запусти полный гейт вместо ручных прогонов pytest: `python3 scripts/gate.py` (оба набора pytest, import-linter, security_shield; код 0 = ЗЕЛЁНЫЙ).
 4. Коммит делает Claude, атомарно, по правилам проекта; затем `agy_task.sh clean <JOB_ID>`.
 
 Пользователю сообщай на русском: что поручено агенту, что проверено и сколько квоты Antigravity потрачено (`stats`).
+
+## Предложение: сузить права agy (НЕ применено)
+
+Сейчас `~/.gemini/antigravity-cli/settings.json` разрешает `permissions.allow`: `command(*)`, `write_file(*)`, `read_file(*)`, а `trustedWorkspaces`: `/opt/chat-app`, `/opt/assistant-core`, `/root/.gemini/antigravity-cli`, `/root`, `/opt`. Реально изолирует только jail `systemd-run` в обёртке; настройки агента — второй рубеж.
+
+Предлагаемый фрагмент (без `command(*)`, доверенная папка — только путь задания внутри «клетки»):
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "read_file(*)",
+      "write_file(*)"
+    ]
+  },
+  "trustedWorkspaces": [
+    "/var/tmp/agy-jobs"
+  ]
+}
+```
+
+Применять только после явного одобрения владельца и пробного запуска через обёртку. Реальный файл настроек, systemd и сервисы этой задачей не менялись.

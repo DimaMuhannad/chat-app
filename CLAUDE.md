@@ -55,6 +55,7 @@ This project is an advanced AI Agent IDE and Autonomous Assistant platform consi
   scripts/agy_task.sh run --repo <path> --mode read|edit <<< "<task>"
   ```
   Never run `agy` directly in a repo: its `--mode plan` and `--sandbox` do not isolate file access. The wrapper jails it (systemd-run), refuses NDA workspaces, and returns edits as a patch for Claude to review, apply and test.
+  Mechanical GSD plans can be marked `cross_ai: true`: execute-phase then runs `scripts/agy_cross_ai.sh` (jail, sentinels, gate, auto-revert) and leaves changes uncommitted for Claude to review, commit and `agy_task.sh clean`; never use GSD's `--agy`/`--antigravity` reviewer lanes (no jail).
 
 ## 4. Coding Standards & Conventions
 - **Language:** Code, comments, commits, and PR descriptions in English or Russian. User-facing outputs strictly Russian.
