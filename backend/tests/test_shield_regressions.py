@@ -111,3 +111,50 @@ def test_cr02_unknown_flag_and_missing_path_fail(tmp_path):
     plain = tmp_path / "plain"
     plain.mkdir()
     assert audit_repository(plain, check_staged_only=False) == 1
+
+
+# --------------------------- CR-04 ---------------------------
+
+
+def test_cr04_truncated_audit_is_not_passed(tmp_path):
+    repo = _init(tmp_path / "repo")
+    for i in range(12):
+        (repo / f"f{i:02d}.txt").write_text("synthetic\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    res = audit_path(repo, max_files=10)
+    assert res["scanned_files"] == 10
+    assert res["status"] == "violations"
+    assert any("неполный" in v for v in res["violations"])
+
+
+def test_cr04_hidden_parent_directory_and_dotenv_are_scanned(tmp_path):
+    hidden_root = tmp_path / ".cache" / "ws"
+    hidden_root.mkdir(parents=True)
+    (hidden_root / "notes.txt").write_text(SECRET_LINE, encoding="utf-8")
+    (hidden_root / ".env").write_text("synthetic\n", encoding="utf-8")
+    res = audit_path(hidden_root)  # каталог без git: фолбэк по файловой системе
+    assert res["scanned_files"] == 2
+    assert res["status"] == "violations"
+    assert len(res["violations"]) == 2
+
+
+def test_cr04_unreadable_file_is_violation(tmp_path, monkeypatch):
+    target = tmp_path / "ws"
+    target.mkdir()
+    (target / "a.txt").write_text("synthetic\n", encoding="utf-8")
+
+    def boom(self, *args, **kwargs):
+        raise OSError("synthetic denied")
+
+    monkeypatch.setattr(Path, "read_text", boom)
+    res = audit_path(target)
+    assert res["status"] == "violations"
+    assert "ошибка чтения" in res["violations"][0]
+
+
+def test_cr04_non_ascii_tracked_file_is_scanned(tmp_path):
+    repo = _init(tmp_path / "repo")
+    (repo / "секрет.py").write_text(SECRET_LINE, encoding="utf-8")
+    _git(repo, "add", "-A")
+    res = audit_path(repo)
+    assert res["status"] == "violations"

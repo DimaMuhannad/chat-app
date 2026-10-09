@@ -184,15 +184,16 @@ def test_n07_secret_patterns_flagged(tmp_path, name):
     assert res["status"] == "violations"
 
 
-def test_n08_web_scans_only_first_100_files(tmp_path):
+def test_n08_web_scans_files_beyond_the_first_100(tmp_path):
+    """CR-04: секрет в 101-м файле находится (раньше Web-аудит усекал список до 100 и отвечал passed)."""
     secret = _secret_samples()["GitHub Personal Access Token"]
     files = {f"f{i:03d}.txt": "synthetic\n" for i in range(100)}
-    files["f100.txt"] = secret + "\n"  # последний по сортировке git ls-files, за окном в 100 файлов
+    files["f100.txt"] = secret + "\n"
     repo = make_repo(tmp_path / "repo", None, files)
     res = _audit(repo, False)
-    assert res["scanned_files"] == 100
-    assert res["violations"] == []
-    assert res["status"] == "passed"
+    assert res["scanned_files"] == 101
+    assert len(res["violations"]) == 1
+    assert res["status"] == "violations"
 
 
 def test_n09_git_timeout_returns_error_tuple(monkeypatch):
