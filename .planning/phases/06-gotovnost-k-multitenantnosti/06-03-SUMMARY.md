@@ -1,7 +1,7 @@
 ---
 phase: "06"
 plan: "03"
-requirements: [ISO-03]
+requirements-completed: [ISO-03]
 key-files:
   created:
     - /opt/chat-app/backend/tests/test_credentials_isolation.py

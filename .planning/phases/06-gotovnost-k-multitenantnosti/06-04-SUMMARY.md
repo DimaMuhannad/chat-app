@@ -1,7 +1,7 @@
 ---
 phase: "06"
 plan: "04"
-requirements: [ISO-04]
+requirements-completed: [ISO-04]
 key-files:
   created:
     - /opt/assistant-core/tests/test_concurrency_isolation.py

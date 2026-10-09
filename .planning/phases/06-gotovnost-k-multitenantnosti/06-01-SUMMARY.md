@@ -1,7 +1,7 @@
 ---
 phase: "06"
 plan: "01"
-requirements: [ISO-01]
+requirements-completed: [ISO-01]
 key-files:
   modified:
     - /opt/assistant-core/src/brain/key_rotator.py

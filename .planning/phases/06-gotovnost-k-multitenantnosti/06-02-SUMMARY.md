@@ -1,7 +1,7 @@
 ---
 phase: "06"
 plan: "02"
-requirements: [ISO-02]
+requirements-completed: [ISO-02]
 key-files:
   created:
     - /opt/assistant-core/src/security/airgap.py
