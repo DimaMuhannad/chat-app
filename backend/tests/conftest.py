@@ -7,7 +7,6 @@
 
 import copy
 import json
-import os
 from pathlib import Path
 import sqlite3
 
@@ -31,22 +30,11 @@ for _ws in DEFAULT_PERSONA_FIXTURE.get("workspaces", []):
 
 
 def _get_default_persona() -> dict:
-    """Возвращает актуальный словарь персоны по умолчанию.
+    """Возвращает статическую каноническую фикстуру персоны по умолчанию.
 
-    Если каталог assistant-core доступен, считывает через штатный loader,
-    иначе использует статическую каноническую фикстуру DEFAULT_PERSONA_FIXTURE.
+    Боевой loader assistant-core намеренно не используется (DAT-04, D-10): набор тестов не должен
+    зависеть от окружения и тихо переключаться между источниками данных (WR-14).
     """
-    core_dir = Path(os.environ.get("ASSISTANT_CORE_DIR", "/opt/assistant-core"))
-    loader_path = core_dir / "src" / "persona" / "loader.py"
-    if loader_path.is_file():
-        try:
-            import sys
-            if str(core_dir) not in sys.path:
-                sys.path.insert(0, str(core_dir))
-            from src.persona.loader import load_persona
-            return load_persona().model_dump(mode="json")
-        except Exception:
-            pass
     return copy.deepcopy(DEFAULT_PERSONA_FIXTURE)
 
 

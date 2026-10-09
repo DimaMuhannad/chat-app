@@ -153,6 +153,7 @@ def test_n04_non_nda_with_same_remote_is_clean(tmp_path):
 
 
 def test_n05_nda_without_origin_is_clean(tmp_path):
+    """Репозиторий без remote некуда пушить: чисто. Сбой git для NDA при этом даёт нарушение (CR-05)."""
     repo = make_repo(tmp_path / "repo", None, {"README.txt": "synthetic\n"})
     res = _audit(repo, True)
     assert res["violations"] == []
