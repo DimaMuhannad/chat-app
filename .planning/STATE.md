@@ -1,13 +1,14 @@
 ---
 gsd_state_version: "1.0"
+milestone: v2.0
 current_phase: 9
 current_phase_name: Динамическое меню и интерфейс Telegram-бота, декларативные алиасы и аудит эргономики
 status: in_progress
 stopped_at: Plan 09-02 completed (Declarative Aliases, FastIntentRouter Fast-Path, Conversational Menu Management)
-last_updated: "2026-10-07T13:36:00.000Z"
-last_activity: 2026-10-07
+last_updated: "2026-10-09T08:33:28.644Z"
+last_activity: 2026-10-09
 last_activity_desc: Plan 09-02 executed (FastIntentRouter protocol integration, chat menu hide/show, custom alias CRUD, /menu command, 413 tests pass, Quality Gate GREEN)
-state_head: 95af84b
+state_head: c6ac2a41bf159d876b12a73753d77019214f7263
 progress:
   total_phases: 9
   completed_phases: 8
@@ -30,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-02)
 Phase: 9 (Динамическое меню и интерфейс Telegram-бота)
 Plan: 09-02 (completed)
 Status: Plan 09-02 executed and verified GREEN (100% Quality Gate pass)
-Last activity: 2026-10-07 — Plan 09-02 completed and verified
+Last activity: 2026-10-09 - Completed quick task 261009-bam: Делегирование простых задач GSD агентам agy через cross-AI и обёртку
 
 Progress: [█████████░] 95% (Phase 9: 2/4 plans executed, 42/44 total plans complete)
 
@@ -158,6 +159,12 @@ None yet.
 - [Phase 2] Нарушение `src.notifier.live_ticker -> src.connectors.aadhk.parser` записано в BASELINE; 5 записей `ignore_imports` в assistant-core убирает PRT-04.
 - [Перед разморозкой chat-app] API без аутентификации и CORS `*` (v2: AUTH2-01/02) — решение владельца.
 - [Операционное] Ключ в юните dev-bridge (OPS-02) — владелец не ротирует; assistant-worker уходит в SIGKILL (OPS-03); `notion_dev.py` в chat-app с битым импортом (OPS-04, вне миграции).
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 261009-bam | Делегирование простых задач GSD агентам agy через cross-AI и обёртку | 2026-10-09 | c6ac2a4 | [261009-bam-delegirovanie-prostyh-zadach-gsd-agentam](./quick/261009-bam-delegirovanie-prostyh-zadach-gsd-agentam/) |
 
 ## Deferred Items
 
