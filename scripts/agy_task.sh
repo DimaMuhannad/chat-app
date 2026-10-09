@@ -18,6 +18,7 @@ FORBIDDEN_FIND=( -name '.env' -o -name '.env.*' -o -name 'credentials.json' -o -
                  -o -name '*.pfx' -o -name '*.pkcs12' )
 
 die() { echo "agy_task: $*" >&2; exit 1; }
+refuse_nda() { echo "agy_task: $*" >&2; exit 3; }
 
 usage() {
   cat <<'EOF'
@@ -39,6 +40,17 @@ usage() {
   test-writer   — шаблонный код и pytest-тесты по образцу проекта
   docs          — документация и перевод
   none          — без профиля (подгружаются правила репозитория, ~2 раза дороже)
+
+Коды возврата run:
+  0  успех (статус SUCCESS и непустой ответ)
+  1  общая ошибка
+  3  отказ: NDA / air-gap (закрытый путь или remote)
+  4  отказ: найдены похожие на секреты строки (в копии или в тексте задачи)
+  5  пустой ответ агента после повтора
+  6  статус агента не SUCCESS (включая NO_JSON), ответ непустой
+
+Последняя строка stdout каждого завершённого run (дошедшего до агента):
+  AGY_RESULT job=ID status=S changed=0|1 patch=ПУТЬ|- rc=N model=M input_tokens=N output_tokens=N
 EOF
 }
 
@@ -59,13 +71,13 @@ check_not_restricted() {
   local top="$1" rp rr remotes
   for rp in "${RESTRICTED_PATHS[@]}"; do
     if [[ "$top" == "$rp" || "$top" == "$rp"/* ]]; then
-      die "отказ: $top — закрытое NDA-пространство ($rp). Отправка его содержимого во внешнюю LLM запрещена (air-gap)."
+      refuse_nda "отказ: $top — закрытое NDA-пространство ($rp). Отправка его содержимого во внешнюю LLM запрещена (air-gap)."
     fi
   done
   remotes="$(git -C "$top" remote -v 2>/dev/null || true)"
   for rr in "${RESTRICTED_REMOTES[@]}"; do
     if grep -qiF -- "$rr" <<<"$remotes"; then
-      die "отказ: remote репозитория содержит '$rr' (NDA). Air-gap."
+      refuse_nda "отказ: remote репозитория содержит '$rr' (NDA). Air-gap."
     fi
   done
 }
@@ -152,6 +164,10 @@ cmd_run() {
   local task
   if [ -n "$task_file" ]; then task="$(cat "$task_file")"; else task="$(cat)"; fi
   [ -n "${task//[[:space:]]/}" ] || die "пустая задача"
+  if grep -qE -- "$SECRET_RE" <<<"$task"; then
+    echo "agy_task: отказ — в тексте задачи найдены похожие на секреты строки (содержимое не показано)" >&2
+    exit 4
+  fi
 
   local top; top="$(git -C "$repo" rev-parse --show-toplevel 2>/dev/null)" || die "$repo — не git-репозиторий"
   top="$(realpath "$top")"
@@ -228,9 +244,9 @@ $task"
     rm -f "$job/changes.patch"; changed=0
   fi
 
-  python3 - "$job/result.json" "$USAGE_LOG" "$id" "$top" "$mode" "$model" "$max_chars" "$(( $(date +%s) - start ))" <<'PY'
-import json, sys, time
-res, log, jid, repo, mode, model, max_chars, wall = sys.argv[1:9]
+  python3 - "$job/result.json" "$USAGE_LOG" "$id" "$top" "$mode" "$model" "$max_chars" "$(( $(date +%s) - start ))" "$job/outcome" <<'PY'
+import json, re, sys, time
+res, log, jid, repo, mode, model, max_chars, wall, outcome = sys.argv[1:10]
 try:
     d = json.load(open(res))
 except Exception:
@@ -239,6 +255,12 @@ except Exception:
 u = d.get("usage") or {}
 resp = (d.get("response") or "").strip()
 status = d.get("status", "?")
+with open(outcome, "w") as f:
+    status_token = re.sub(r"\s+", "_", str(status)) or "?"
+    f.write(f"status={status_token}\n")
+    f.write(f"response_empty={0 if resp else 1}\n")
+    f.write(f"input_tokens={int(u.get('input_tokens', 0) or 0)}\n")
+    f.write(f"output_tokens={int(u.get('output_tokens', 0) or 0)}\n")
 print(f"=== agy {status} | {model} | {wall} с | токены Antigravity: вход {u.get('input_tokens', 0)}, выход {u.get('output_tokens', 0)} ===")
 if status != "SUCCESS" and resp:
     print("(статус не SUCCESS, но ответ есть — известная нестабильность agy; проверь ответ на полноту)")
@@ -253,6 +275,13 @@ with open(log, "a") as f:
                         "response_chars": min(len(resp), mc)}, ensure_ascii=False) + "\n")
 PY
 
+  local o_status o_empty o_in o_out rc=0
+  o_status="$(sed -n 's/^status=//p' "$job/outcome" 2>/dev/null)"; o_status="${o_status:-?}"
+  o_empty="$(sed -n 's/^response_empty=//p' "$job/outcome" 2>/dev/null)"; o_empty="${o_empty:-1}"
+  o_in="$(sed -n 's/^input_tokens=//p' "$job/outcome" 2>/dev/null)"; o_in="${o_in:-0}"
+  o_out="$(sed -n 's/^output_tokens=//p' "$job/outcome" 2>/dev/null)"; o_out="${o_out:-0}"
+  if [ "$o_empty" = 1 ]; then rc=5; elif [ "$o_status" != SUCCESS ]; then rc=6; fi
+
   if [ "$changed" = 1 ]; then
     echo "=== правки агента (задание $id) ==="
     git apply --stat "$job/changes.patch"
@@ -263,6 +292,9 @@ PY
   else
     echo "Задание сохранено: $id"
   fi
+  local patch_out="-"; [ "$changed" = 1 ] && patch_out="$job/changes.patch"
+  echo "AGY_RESULT job=$id status=$o_status changed=$changed patch=$patch_out rc=$rc model=${model// /_} input_tokens=$o_in output_tokens=$o_out"
+  exit "$rc"
 }
 
 case "${1:-}" in

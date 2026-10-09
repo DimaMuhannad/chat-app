@@ -1,7 +1,10 @@
 {
   "workflow": {
     "_auto_chain_active": false,
-    "use_worktrees": false
+    "use_worktrees": false,
+    "cross_ai_execution": true,
+    "cross_ai_command": "scripts/agy_cross_ai.sh",
+    "cross_ai_timeout": 900
   },
   "git": {
     "allow_default_branch_commits": true
