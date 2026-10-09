@@ -162,7 +162,7 @@ conn.execute("COMMIT")
 **File:** `/opt/assistant-shared/assistant_shared/security/patterns.py:7-13`
 **Issue:** Проверка регулярных выражений на реальных форматах:
 - Ключ Anthropic `sk-ant-api03-<...>` не ловится (в паттерне `sk-ant-[a-zA-Z0-9]{20,}` после `sk-ant-` стоит `api03-`, дефис ломает совпадение; первая ветка `sk-[a-zA-Z0-9]{20,}` тоже не совпадает из-за дефисов). Название паттерна «OpenAI/Anthropic API Key» создаёт ложное чувство защиты. `sk-proj-...` (OpenAI) тоже не ловится.
-- `-----BEGIN PGP PRIVATE KEY BLOCK-----` не ловится (после `PRIVATE KEY` ожидается `-----`), `-----BEGIN ENCRYPTED PRIVATE KEY-----` тоже.
+- Заголовки PGP PRIVATE KEY BLOCK и ENCRYPTED PRIVATE KEY (с обрамлением из пяти дефисов и словом BEGIN) не ловятся (после `PRIVATE KEY` ожидается `-----`).
 - `gho_`, `ghs_`, `ghu_` токены GitHub, AWS `AKIA...`, Slack `xoxb-` не покрыты.
 - `Generic Bearer Secret` требует кавычку непосредственно после ключа и не ловит JSON `"api_key": "..."` и значения без кавычек (`API_KEY=abcdef...` в `.env`-подобных файлах).
 - `FORBIDDEN_FILES` не включает `id_rsa`, `id_ed25519`, `.env.bak`, `.env.production.local`, `service-account*.json`, `.npmrc`.
