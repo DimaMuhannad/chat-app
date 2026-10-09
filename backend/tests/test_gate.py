@@ -344,3 +344,25 @@ def test_known_shield_false_positives_total_is_twelve():
     # 18 находок Фазы 3 - 6 из scripts/security_shield.py (SEC-02) = 12.
     total = sum(sum(entries.values()) for entries in gate.KNOWN_SHIELD_FALSE_POSITIVES.values())
     assert total == 12
+
+
+def test_db_content_hash_ignores_wal_checkpoint_but_sees_data_changes(tmp_path):
+    """WR-10: хеш БД логический - checkpoint его не меняет, запись данных меняет."""
+    import sqlite3
+
+    db = tmp_path / "live.db"
+    conn = sqlite3.connect(db)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT);")
+    conn.execute("INSERT INTO t (v) VALUES ('a');")
+    conn.commit()
+    try:
+        before = gate.db_content_hash(db)
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE);")
+        assert gate.db_content_hash(db) == before
+        conn.execute("INSERT INTO t (v) VALUES ('b');")
+        conn.commit()
+        assert gate.db_content_hash(db) != before
+    finally:
+        conn.close()
+    assert gate._sha_or_none(tmp_path / "missing.db") is None

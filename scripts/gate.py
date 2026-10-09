@@ -466,10 +466,28 @@ def render_report(results: list[CheckResult]) -> str:
     return "\n".join(lines)
 
 
+def db_content_hash(db: Path) -> str:
+    """SHA-256 логического содержимого БД (дамп схемы и данных через соединение только на чтение).
+
+    Хеш файла ненадёжен в режиме WAL: записи лежат в -wal, а checkpoint меняет основной файл без
+    изменения данных. Дамп в одной транзакции от этого не зависит (WR-10).
+    """
+    conn = sqlite3.connect(db.resolve().as_uri() + "?mode=ro", uri=True, timeout=30)
+    try:
+        conn.execute("BEGIN")
+        digest = hashlib.sha256()
+        for line in conn.iterdump():
+            digest.update(line.encode("utf-8", "surrogatepass"))
+            digest.update(b"\n")
+        return digest.hexdigest()
+    finally:
+        conn.close()
+
+
 def _sha_or_none(path: Path) -> str | None:
     try:
-        return sha256_file(path)
-    except OSError:
+        return db_content_hash(path)
+    except (OSError, sqlite3.Error):
         return None
 
 
