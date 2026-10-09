@@ -193,11 +193,8 @@ SHA взяты из заголовков `docs/baseline/pytest-chat-app.txt` и 
 | chat-app | scripts/security_shield.py | nda-keyword | 3 |
 | assistant-core | scripts/security_shield.py | nda-keyword | 3 |
 | assistant-core | config/persona.yaml | nda-keyword | 3 (решение владельца 2026-10-02 (OQ1), снимается в Фазе 4) |
-| assistant-core | tests/test_debrief_parser.py | secret: Generic Bearer Secret | 2 |
-| assistant-core | tests/test_notion_client.py | secret: Generic Bearer Secret | 1 |
-| assistant-core | tests/test_voice.py | secret: Generic Bearer Secret | 3 |
 
-Итого: chat-app 6, assistant-core 12, всего 18. Записи удаляются в том же коммите, что исправляет соответствующее место; если запись осталась после исправления места, гейт краснеет на устаревшей записи.
+Итого на конец Фазы 3: chat-app 6, assistant-core 12, всего 18. В Фазе 4 (04-REVIEW CR-04) фиктивные ключи в трёх тестах assistant-core укорочены и записи удалены: осталось 6 (3 в chat-app, 3 в assistant-core). Записи удаляются в том же коммите, что исправляет соответствующее место; если запись осталась после исправления места, гейт краснеет на устаревшей записи.
 
 ## Итог после Фазы 1
 

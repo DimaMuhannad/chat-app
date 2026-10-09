@@ -340,10 +340,11 @@ def test_run_shield_step_new_finding_is_red_without_raw_output(tmp_path, monkeyp
     assert "git.example" not in result.detail
 
 
-def test_known_shield_false_positives_total_is_twelve():
-    # 18 находок Фазы 3 - 6 из scripts/security_shield.py (SEC-02) = 12.
+def test_known_shield_false_positives_total_is_six():
+    # 18 находок Фазы 3 - 6 из scripts/security_shield.py (SEC-02) - 6 фиктивных ключей в тестах
+    # assistant-core (укорочены в Фазе 4, CR-04) = 6.
     total = sum(sum(entries.values()) for entries in gate.KNOWN_SHIELD_FALSE_POSITIVES.values())
-    assert total == 12
+    assert total == 6
 
 
 def test_db_content_hash_ignores_wal_checkpoint_but_sees_data_changes(tmp_path):
