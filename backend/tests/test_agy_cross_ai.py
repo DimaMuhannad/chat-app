@@ -3,7 +3,9 @@
 Настоящие скрипты запускаются целиком; подменяются только внешние зависимости:
   * systemd-run  -> shim в PATH (тестовый; в боевом коде обхода jail нет);
   * agy          -> stub через AGY_BIN, сценарий выбирается AGY_STUB_SCENARIO;
-  * гейт качества -> stub через AGY_GATE_CMD (настоящий gate.py из тестов не вызывается).
+  * гейт качества -> stub через AGY_GATE_CMD (настоящий gate.py из тестов не вызывается);
+    выбор гейта без AGY_GATE_CMD проверяется на побайтной копии адаптера с заглушкой gate.py
+    рядом, поэтому настоящий гейт chat-app из тестов не вызывается никогда.
 Всё создаётся в tmp_path, реальный репозиторий и /var/tmp/agy-jobs не затрагиваются.
 Пропусков (skip) нет: гейт считает их красными.
 """
@@ -12,6 +14,7 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import signal
 import subprocess
 import time
@@ -92,6 +95,17 @@ echo gate >> "$GATE_STUB_LOG"
 if [ -n "${GATE_STUB_MARKER:-}" ]; then touch "$GATE_STUB_MARKER"; fi
 if [ -n "${GATE_STUB_SLEEP:-}" ]; then exec sleep "$GATE_STUB_SLEEP"; fi
 exit "${GATE_STUB_RC:-0}"
+"""
+
+# Python-заглушка scripts/gate.py: пишет в журнал «путь скрипта|рабочий каталог» (оба после resolve()).
+PY_GATE_STUB = """#!/usr/bin/env python3
+import os
+import sys
+from pathlib import Path
+
+with open(os.environ["GATE_STUB_LOG"], "a") as fh:
+    fh.write(f"{Path(__file__).resolve()}|{Path.cwd().resolve()}\\n")
+sys.exit(int(os.environ.get("GATE_STUB_RC", "0")))
 """
 
 DEFAULT_PROMPT = """<objective>
@@ -179,11 +193,30 @@ def sandbox(tmp_path: Path) -> Sandbox:
     return Sandbox(repo=repo, env=env, jobs=jobs, agy_log=agy_log, gate_log=gate_log, tmp=tmp_path)
 
 
-def run_adapter(sb: Sandbox, prompt: str = DEFAULT_PROMPT, timeout: int = 120):
+def run_adapter(sb: Sandbox, prompt: str = DEFAULT_PROMPT, timeout: int = 120, adapter: Path = ADAPTER):
     return subprocess.run(
-        [str(ADAPTER)], input=prompt, cwd=sb.repo, env=sb.env,
+        [str(adapter)], input=prompt, cwd=sb.repo, env=sb.env,
         capture_output=True, text=True, timeout=timeout,
     )
+
+
+def adapter_copy(sb: Sandbox) -> Path:
+    """Побайтная копия адаптера и agy_task.sh в tmp_path рядом с заглушкой gate.py.
+
+    ЗАЧЕМ: без AGY_GATE_CMD адаптер выбирает гейт по расположению файлов. Рядом с копией лежит
+    заглушка gate.py, поэтому даже при ошибке выбора тест не запустит настоящий гейт chat-app
+    (это минуты работы и рекурсия gate -> pytest -> gate). Возвращает корень «дома» копии.
+    """
+    home = sb.tmp / "adapter_home"
+    scripts = home / "scripts"
+    scripts.mkdir(parents=True)
+    shutil.copy2(ADAPTER, scripts / "agy_cross_ai.sh")
+    shutil.copy2(AGY_TASK, scripts / "agy_task.sh")
+    write_exec(scripts / "gate.py", PY_GATE_STUB)
+    # agy_task.sh ищет профили агентов относительно своего расположения; у копии `.agents` нет.
+    sb.env["AGY_AGENTS_SRC"] = str(ROOT / ".agents" / "agents")
+    sb.env.pop("AGY_GATE_CMD", None)
+    return home.resolve()
 
 
 def commit_count(repo: Path) -> int:
@@ -415,3 +448,39 @@ def test_agy_task_edit_prints_agy_result_last(sandbox: Sandbox):
         r"model=stub-model input_tokens=100 output_tokens=20$",
         last,
     ), last
+
+
+# ---------------------------------------------------------------- выбор гейта (GATE-05)
+
+
+def test_target_repo_gate_runs_from_repo_root(sandbox: Sandbox):
+    """Без AGY_GATE_CMD адаптер запускает scripts/gate.py целевого репозитория из его корня."""
+    write_exec(sandbox.repo / "scripts" / "gate.py", PY_GATE_STUB)
+    git(sandbox.repo, "add", "-A")
+    git(sandbox.repo, "commit", "-q", "-m", "target gate stub")
+    home = adapter_copy(sandbox)
+    before = commit_count(sandbox.repo)
+
+    res = run_adapter(sandbox, adapter=home / "scripts" / "agy_cross_ai.sh")
+
+    assert res.returncode == 0, res.stderr
+    repo = sandbox.repo.resolve()
+    assert sandbox.gate_log.read_text().splitlines() == [f"{repo / 'scripts' / 'gate.py'}|{repo}"], res.stderr
+    assert "Гейт качества целевого репозитория завершился с кодом 0" in res.stdout
+    assert commit_count(sandbox.repo) == before
+    assert git(sandbox.repo, "status", "--porcelain").splitlines() == [" M app.txt", " A new.txt"]
+
+
+def test_fallback_to_adapter_gate_when_repo_has_none(sandbox: Sandbox):
+    """Если у целевого репозитория нет scripts/gate.py, запускается гейт рядом с адаптером."""
+    git(sandbox.repo, "rm", "-q", "scripts/gate.py")
+    git(sandbox.repo, "commit", "-q", "-m", "drop gate")
+    assert not (sandbox.repo / "scripts" / "gate.py").exists()
+    home = adapter_copy(sandbox)
+    before = commit_count(sandbox.repo)
+
+    res = run_adapter(sandbox, adapter=home / "scripts" / "agy_cross_ai.sh")
+
+    assert res.returncode == 0, res.stderr
+    assert sandbox.gate_log.read_text().splitlines() == [f"{home / 'scripts' / 'gate.py'}|{home}"], res.stderr
+    assert commit_count(sandbox.repo) == before

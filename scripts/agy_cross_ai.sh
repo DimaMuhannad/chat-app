@@ -17,6 +17,14 @@
 #        AGY_CROSS_AI_AGENT_TIMEOUT per-attempt agent timeout, seconds (default 300)
 #        AGY_GATE_CMD               TEST-ONLY: executable replacing `python3 scripts/gate.py`
 #
+# Quality gate selection (GATE-05, D-15), first match wins:
+#   1) AGY_GATE_CMD (tests only), run from the adapter's own repo root;
+#   2) scripts/gate.py in the root of the --repo target: the target repository's own gate,
+#      run with python3 from that root (assistant-core has one since its phase 1);
+#   3) otherwise the chat-app gate next to this adapter, run from the chat-app root.
+# Why the target's gate can be trusted: scripts/gate.py is in PROTECTED, so a patch that
+# creates, changes or deletes it is refused with exit 12 before it is applied.
+#
 # Exit codes: 0 ok; 2 usage/empty prompt/not a git repo; 1,3,4,5,6 propagated from
 # agy_task.sh; 10 dirty tree outside .planning/; 11 no valid AGY_RESULT / not SUCCESS /
 # no changes / patch missing; 12 patch touches a protected path; 13 a path declared in
@@ -301,10 +309,17 @@ if [ "${#CREATED[@]}" -gt 0 ]; then
 fi
 
 # ---------- gate ----------
-if [ -n "${AGY_GATE_CMD:-}" ]; then GATE=("$AGY_GATE_CMD"); else GATE=(python3 "$SCRIPT_DIR/gate.py"); fi
+if [ -n "${AGY_GATE_CMD:-}" ]; then
+  GATE=("$AGY_GATE_CMD"); GATE_DIR="$SCRIPT_DIR/.."
+elif [ -f "$TOP/scripts/gate.py" ]; then
+  GATE=(python3 "$TOP/scripts/gate.py"); GATE_DIR="$TOP"
+else
+  GATE=(python3 "$SCRIPT_DIR/gate.py"); GATE_DIR="$SCRIPT_DIR/.."
+fi
+say "гейт качества: ${GATE[*]} (каталог $GATE_DIR)"
 GATE_LOG="$JOB_DIR/gate.log"
 set +e
-( cd "$SCRIPT_DIR/.." && exec "${GATE[@]}" ) < /dev/null > "$GATE_LOG" 2>&1 &
+( cd "$GATE_DIR" && exec "${GATE[@]}" ) < /dev/null > "$GATE_LOG" 2>&1 &
 CHILD_PID=$!
 wait "$CHILD_PID"
 GATE_RC=$?
@@ -365,7 +380,7 @@ out += ["---", "", "# Исполнение плана агентом Antigravity
         "после проверок адаптера и зелёного гейта качества. Коммита нет.", "",
         "## Изменённые файлы", "", "```", stat, "```", "",
         "## Проверка", "",
-        f"Гейт качества (`python3 scripts/gate.py`) завершился с кодом 0. Журнал: {gate_log}", "",
+        f"Гейт качества целевого репозитория завершился с кодом 0. Журнал: {gate_log}", "",
         "## Ответ агента", "", quoted, "",
         "## ВНИМАНИЕ: правки НЕ ЗАКОММИЧЕНЫ", "",
         "changes are UNCOMMITTED — Claude orchestrator must review the diff and commit", "",
