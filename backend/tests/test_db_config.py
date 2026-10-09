@@ -36,3 +36,15 @@ def test_no_hardcoded_assistant_core_path_in_config() -> None:
     assert "/opt/assistant-core/data/assistant.db" not in content, (
         "Обнаружен строковый хардкод /opt/assistant-core/data/assistant.db в config.py"
     )
+
+
+def test_wr08_lower_function_handles_non_strings_and_unicode(tmp_path):
+    """WR-08: SQL lower() не падает на INTEGER/BLOB/NULL и понижает регистр кириллицы."""
+    from assistant_shared.db.connection import get_sync_connection
+
+    with get_sync_connection(tmp_path / "lower.db") as conn:
+        row = conn.execute("SELECT lower(5) AS i, lower(NULL) AS n, lower('ПрИвЕт') AS c, lower(x'41') AS b;").fetchone()
+        assert row["i"] == 5
+        assert row["n"] is None
+        assert row["c"] == "привет"
+        assert row["b"] == b"A"
