@@ -326,7 +326,7 @@ conn.create_function("lower", 1, _lower, deterministic=True)
 ### IN-04: Ключевые слова NDA сравниваются с учётом регистра
 
 **File:** `/opt/assistant-shared/assistant_shared/security/auditor.py:53-58`
-**Issue:** `kw in line` не находит `TYDEX_INTERNAL_SECRET`, `Golay_Calibration_Key`. Остальные проверки (`normalize_remote`) используют `casefold`. Кроме того, чтение с `errors="ignore"` не распознаёт файлы в UTF-16.
+**Issue:** `kw in line` не находит `[слово NDA скрыто]`, `[слово NDA скрыто]`. Остальные проверки (`normalize_remote`) используют `casefold`. Кроме того, чтение с `errors="ignore"` не распознаёт файлы в UTF-16.
 **Fix:** сравнивать `kw.casefold() in line.casefold()`.
 
 ---
