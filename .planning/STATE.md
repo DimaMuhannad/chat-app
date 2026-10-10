@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 Phase: Milestone v2.0 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-10-10 - Completed quick task 261010-ivt: shield rules from workspace data, web audit checks NDA keywords (SECF-01, SECF-02)
+Last activity: 2026-10-10 - Completed quick task 261010-cgx: cross-AI adapter protects gate environment, labels fallback gate, refuses symlinked gate path (WR-05, WR-06, T-uo4-02)
 
 ## Состояние окружения: ЗАМОРОЖЕН (с 2026-10-01)
 
@@ -163,6 +163,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 261009-uo4 | adapter cross-AI runs target repository gate (GATE-05) | 2026-10-09 | 6b3b2ac | [261009-uo4-adapter-cross-ai-runs-target-repository-](./quick/261009-uo4-adapter-cross-ai-runs-target-repository-/) |
 | 261010-ivt | shield rules from workspace data, web audit checks NDA keywords (SECF-01, SECF-02) | 2026-10-10 | 568ecf2 | [261010-ivt-shield-rules-from-workspace-data-web-aud](./quick/261010-ivt-shield-rules-from-workspace-data-web-aud/) |
+| 261010-cgx | cross-AI adapter protects gate environment, labels fallback gate, refuses symlinked gate path (WR-05, WR-06, T-uo4-02) | 2026-10-10 | 27886b3 | [261010-cgx-cross-ai-adapter-gate-environment-protecti](./quick/261010-cgx-cross-ai-adapter-gate-environment-protecti/) |
 
 ## Deferred Items
 
