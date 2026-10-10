@@ -7,6 +7,7 @@ import aiosqlite
 import pytest
 
 from assistant_shared.db.migrator import (
+    MIGRATIONS_DIR,
     get_schema_version,
     list_applied_migrations,
     run_migrations,
@@ -43,10 +44,13 @@ EXPECTED_CORE_TABLES = [
     "connector_bindings",
     "schema_migrations",
     "pending_confirmations",
+    "bot_command_settings",
+    "bot_custom_aliases",
+    "dialog_feedback_log",
 ]
 
-LATEST_SCHEMA_VERSION = "0002_pending_confirmations"
-ALL_MIGRATIONS = ["0001_initial_schema", "0002_pending_confirmations"]
+ALL_MIGRATIONS = sorted(p.stem for p in MIGRATIONS_DIR.glob("*.sql"))
+LATEST_SCHEMA_VERSION = ALL_MIGRATIONS[-1]
 
 
 def test_initial_schema_creates_all_tables(tmp_path: Path) -> None:
@@ -98,7 +102,7 @@ def test_migrations_aiosqlite_in_memory_connection() -> None:
 
             async with aio_conn.execute("SELECT count(*) FROM schema_migrations;") as cursor:
                 row = await cursor.fetchone()
-                assert row[0] == 2
+                assert row[0] == len(ALL_MIGRATIONS)
 
             async with aio_conn.execute("SELECT count(*) FROM tasks;") as cursor:
                 row = await cursor.fetchone()
@@ -280,3 +284,49 @@ def test_baseline_missing_column_skips_only_the_index(tmp_path: Path) -> None:
         assert "extra" in names and "idx_tasks_due" not in names
     finally:
         conn.close()
+
+
+def test_bot_tables_schema_columns(tmp_path: Path) -> None:
+    """SCH-02: после общего мигратора у каждой из трёх таблиц бота имена столбцов по порядку равны ожидаемым."""
+    db_file = tmp_path / "bot_cols.db"
+    run_migrations(db_file)
+
+    conn = sqlite3.connect(str(db_file))
+    try:
+        expected_columns = {
+            "bot_command_settings": ["command_name", "is_enabled", "custom_description", "updated_at"],
+            "bot_custom_aliases": ["alias", "canonical_command", "created_at"],
+            "dialog_feedback_log": ["id", "message_id", "user_id", "feedback_type", "created_at"],
+        }
+        for table_name, expected_cols in expected_columns.items():
+            cols = [row[1] for row in conn.execute(f"PRAGMA table_info({table_name});").fetchall()]
+            assert cols == expected_cols, f"Колонки таблицы {table_name} отличаются: {cols} != {expected_cols}"
+    finally:
+        conn.close()
+
+
+def test_chat_app_does_not_create_shared_schema_tables() -> None:
+    """SCH-02: в backend/app/**/*.py нет оператора CREATE TABLE с именами трёх таблиц бота."""
+    import re
+    app_dir = Path(__file__).resolve().parent.parent / "app"
+    assert app_dir.is_dir(), f"Каталог {app_dir} не найден"
+    py_files = list(app_dir.rglob("*.py"))
+    assert len(py_files) > 0, "Не найдено файлов в backend/app"
+
+    bot_tables = ("bot_command_settings", "bot_custom_aliases", "dialog_feedback_log")
+    pattern = re.compile(r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(" + "|".join(bot_tables) + r")\b", re.IGNORECASE)
+
+    # Самопроверка паттерна на синтетическом тексте
+    assert pattern.search("CREATE TABLE bot_command_settings (id int)")
+    assert pattern.search("create table if not exists\n  dialog_feedback_log\n(id int)")
+    assert not pattern.search("SELECT * FROM bot_command_settings")
+
+    violations = []
+    for f in py_files:
+        text = f.read_text(encoding="utf-8")
+        match = pattern.search(text)
+        if match:
+            violations.append(f"{f.name}: найдено {match.group(0)}")
+
+    assert not violations, f"Обнаружено создание таблиц общей схемы в chat-app: {violations}"
+
