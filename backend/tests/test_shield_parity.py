@@ -46,7 +46,7 @@ def test_parity_between_web_audit_and_cli_shield(tmp_path: Path, capsys):
     web_violations = web_res["violations"]
 
     # 2. CLI-аудит (audit_repository)
-    cli_code = audit_repository(repo, check_staged_only=False)
+    cli_code = audit_repository(repo, check_staged_only=False, workspaces=())
     captured = capsys.readouterr()
     assert cli_code == 1
 

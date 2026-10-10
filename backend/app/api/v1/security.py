@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.db import DatabaseService
 from assistant_shared.security import (
     audit_path,
+    collect_protected_keywords,
     nda_rule_for,
 )
 
@@ -33,10 +34,12 @@ async def get_security_overview():
     workspaces = await _persona_workspaces()
     overview = []
     total_violations = 0
+    # Слова NDA всех пространств персоны: ищутся в каталогах НЕ-NDA пространств (SECF-02, D-12)
+    protected = collect_protected_keywords(workspaces)
 
     for p in workspaces:
         p_path = Path(p["path"])
-        res = await asyncio.to_thread(audit_path, p_path, nda_rule=nda_rule_for(p))
+        res = await asyncio.to_thread(audit_path, p_path, nda_rule=nda_rule_for(p), forbidden_keywords=protected)
         total_violations += len(res.get("violations", []))
 
         overview.append({
@@ -75,10 +78,12 @@ async def run_security_audit(req: AuditRequest):
     target_projects = [p for p in workspaces if p["id"] == req.project_id] if req.project_id else workspaces
     if req.project_id and not target_projects:
         raise HTTPException(status_code=404, detail="Рабочее пространство не найдено")
+    # Слова берутся по ВСЕМ пространствам персоны, а не только по выбранному (SECF-02, D-12)
+    protected = collect_protected_keywords(workspaces)
 
     for p in target_projects:
         p_path = Path(p["path"])
-        res = await asyncio.to_thread(audit_path, p_path, nda_rule=nda_rule_for(p))
+        res = await asyncio.to_thread(audit_path, p_path, nda_rule=nda_rule_for(p), forbidden_keywords=protected)
         results.append({
             "project_id": p["id"],
             "project_name": p["label"],

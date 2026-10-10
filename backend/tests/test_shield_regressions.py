@@ -11,6 +11,8 @@ import pytest
 from assistant_shared.security import audit_path, audit_repository
 from assistant_shared.security.runner import GitError, get_staged_or_tracked_files
 
+from .nda_helpers import nda_workspace_at, owner_nda_workspace
+
 SECRET_LINE = "api" + "_key = '" + "a" * 20 + "'\n"
 
 
@@ -41,7 +43,7 @@ def test_cr01_renamed_forbidden_file_is_scanned(tmp_path, capsys):
     _commit(repo)
     _git(repo, "mv", "cfg.txt", "credentials.json")
     assert get_staged_or_tracked_files(repo, check_staged_only=True) == ["credentials.json"]
-    assert audit_repository(repo) == 1
+    assert audit_repository(repo, workspaces=()) == 1
     assert "Forbidden file pattern" in capsys.readouterr().out
 
 
@@ -50,7 +52,7 @@ def test_cr01_non_ascii_file_name_is_scanned(tmp_path, capsys):
     (repo / "секрет.py").write_text(SECRET_LINE, encoding="utf-8")
     _git(repo, "add", "-A")
     assert get_staged_or_tracked_files(repo, check_staged_only=True) == ["секрет.py"]
-    assert audit_repository(repo) == 1
+    assert audit_repository(repo, workspaces=()) == 1
     assert "Generic Bearer Secret" in capsys.readouterr().out
 
 
@@ -59,7 +61,7 @@ def test_cr01_git_failure_is_fail_closed(tmp_path, capsys):
     not_a_repo.mkdir()
     with pytest.raises(GitError):
         get_staged_or_tracked_files(not_a_repo, check_staged_only=True)
-    assert audit_repository(not_a_repo) == 1
+    assert audit_repository(not_a_repo, workspaces=()) == 1
     assert "SECURITY SHIELD ERROR" in capsys.readouterr().out
 
 
@@ -71,7 +73,7 @@ def test_cr03_staged_secret_is_found_after_worktree_cleanup(tmp_path, capsys):
     (repo / "leak.txt").write_text(SECRET_LINE, encoding="utf-8")
     _git(repo, "add", "leak.txt")
     (repo / "leak.txt").write_text("clean\n", encoding="utf-8")  # рабочая копия чистая, индекс нет
-    assert audit_repository(repo) == 1
+    assert audit_repository(repo, workspaces=()) == 1
     assert "Generic Bearer Secret" in capsys.readouterr().out
 
 
@@ -80,7 +82,7 @@ def test_cr03_staged_clean_version_passes_despite_dirty_worktree(tmp_path):
     (repo / "ok.txt").write_text("clean\n", encoding="utf-8")
     _git(repo, "add", "ok.txt")
     (repo / "ok.txt").write_text(SECRET_LINE, encoding="utf-8")  # не проиндексировано, в коммит не попадёт
-    assert audit_repository(repo) == 0
+    assert audit_repository(repo, workspaces=()) == 0
 
 
 # --------------------------- CR-02 ---------------------------
@@ -110,7 +112,7 @@ def test_cr02_unknown_flag_and_missing_path_fail(tmp_path):
     assert _run_shield(str(tmp_path / "net-takogo"), cwd=tmp_path).returncode == 1
     plain = tmp_path / "plain"
     plain.mkdir()
-    assert audit_repository(plain, check_staged_only=False) == 1
+    assert audit_repository(plain, check_staged_only=False, workspaces=()) == 1
 
 
 # --------------------------- CR-04 ---------------------------
@@ -216,15 +218,22 @@ def test_cr05_nda_git_failure_is_fail_closed(tmp_path):
 
 
 def test_cr05_cli_checks_all_remotes_and_aliases(tmp_path):
-    nda_root = tmp_path / "tydex-work"
+    # NDA-репозиторий определяется данными пространства (путь), имя каталога нейтральное
+    nda_root = tmp_path / "ws-a"
+    owner = owner_nda_workspace()
+    workspace = {**nda_workspace_at(nda_root), "forbidden_remote_substrings": owner["forbidden_remote_substrings"]}
+    host, sep, owner_path = owner["forbidden_remote_substrings"][0].partition("/")
+    assert sep and owner_path, "подстрока remote в данных ожидается в виде host/owner"
+    # алиас хоста и порт ssh: проверка идёт по нормализованному remote (CR-05)
+    forbidden_remote = "ssh://git@ssh." + host + ":443/" + owner_path + "/r.git"
     repo = _init(nda_root / "repo")
     _git(repo, "remote", "add", "origin", "https://git.example.net/team/r.git")
-    _git(repo, "remote", "add", "backup", "ssh://git@ssh.github.com:443/DimaMuhannad/r.git")
-    assert audit_repository(repo) == 1
+    _git(repo, "remote", "add", "backup", forbidden_remote)
+    assert audit_repository(repo, workspaces=[workspace]) == 1
 
     repo2 = _init(nda_root / "repo2")
     _git(repo2, "remote", "add", "origin", "https://git.example.net/team/r.git")
-    assert audit_repository(repo2) == 0
+    assert audit_repository(repo2, workspaces=[workspace]) == 0
 
 
 # --------------------------- CR-07 ---------------------------

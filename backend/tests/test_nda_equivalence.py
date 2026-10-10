@@ -1,23 +1,20 @@
 """Характеризация NDA-чек-листа (PER-04, D-14, D-15): явный перечень проверок Web-аудита и shield.
 
-Тесты работают на настоящих временных git-репозиториях. Правила NDA владельца читаются из таблицы
-workspaces копии БД (литерал аккаунта в файл не пишется), слова NDA - из scripts/security_shield.py
-во время теста. Секретные строки собираются из частей в рантайме: файл теста сам не содержит
-совпадений с шаблонами секретов (Web-аудит сканирует первые 100 файлов, shield --all - все).
+Тесты работают на настоящих временных git-репозиториях. Правила и слова NDA владельца читаются из таблицы
+workspaces копии БД (литерал аккаунта и слова NDA в файл не пишутся); режим NDA репозитория определяют
+данные пространств (путь, remote), а не имя каталога. Секретные строки собираются из частей в рантайме:
+файл теста сам не содержит совпадений с шаблонами секретов (Web-аудит сканирует первые 100 файлов,
+shield --all - все).
 
 Правило вывода: assert сравнивает только числа, булевы флаги и префиксы; слова NDA и списки
-нарушений в сообщения pytest не попадают. Идентификаторы пунктов (N01..N09, S01..S09, P02, P03)
+нарушений в сообщения pytest не попадают. Идентификаторы пунктов (N01..N09, S01..S09, P02)
 соответствуют разделу «NDA-чек-лист» в 03-RESEARCH.md.
 
-Известное расхождение, зафиксированное без выравнивания (закрывает Фаза 4, SEC-01/02): Web-аудит не
-проверяет слова NDA, скрипты проверяют их во всех НЕ-NDA репозиториях.
+Прежнее расхождение закрыто (SECF-02, D-12): оба пути, Web-аудит и скрипты, ищут слова NDA других
+пространств в НЕ-NDA каталогах (веб-часть проверяется в test_web_nda_keywords.py). Паритет обёрток
+shield заменён тестом делегирования (test_shield_delegator.py).
 """
 
-import hashlib
-import importlib.util
-import json
-import os
-import sqlite3
 import subprocess
 from pathlib import Path
 
@@ -33,9 +30,9 @@ from app.core.config import settings
 from app.db import DatabaseService
 from app.main import app
 
+from .nda_helpers import nda_workspace_at, owner_nda_keywords, owner_nda_workspace
 from .synthetic_persona import SYNTHETIC_PERSONA
 
-SHIELD_PATH = Path(__file__).resolve().parents[2] / "scripts" / "security_shield.py"
 GENERIC_BEARER = "Generic Bearer Secret"
 
 
@@ -60,26 +57,7 @@ def _load_shield():
     return module
 
 
-def _owner_nda_workspace() -> dict:
-    """Строка restricted_nda персоны settings.PERSONA_ID из workspaces копии БД (списки декодированы)."""
-    uri = Path(settings.SQLITE_DB_PATH).resolve().as_uri() + "?mode=ro"
-    conn = sqlite3.connect(uri, uri=True)
-    conn.row_factory = sqlite3.Row
-    try:
-        row = conn.execute(
-            "SELECT id, label, path, clearance, account, clearance_label, color, remote, "
-            "forbidden_remote_substrings, forbidden_keywords, remote_violation_message "
-            "FROM workspaces WHERE persona_id = ? AND clearance = 'restricted_nda' "
-            "ORDER BY position LIMIT 1;",
-            (settings.PERSONA_ID,),
-        ).fetchone()
-    finally:
-        conn.close()
-    assert row is not None, "у персоны нет NDA-пространства в копии БД"
-    ws = dict(row)
-    ws["forbidden_remote_substrings"] = json.loads(ws["forbidden_remote_substrings"] or "[]")
-    ws["forbidden_keywords"] = json.loads(ws["forbidden_keywords"] or "[]")
-    return ws
+_owner_nda_workspace = owner_nda_workspace
 
 
 def _owner_remote() -> str:
@@ -212,10 +190,13 @@ def test_n09_git_timeout_returns_error_tuple(monkeypatch):
 # --------------------------- скрипты (security_shield.py): S01-S09 ---------------------------
 
 
-def test_s01_script_detects_nda_by_path_substring(tmp_path, capsys):
+def test_s01_script_detects_nda_by_workspace_data(tmp_path, capsys):
+    """Режим NDA определяют данные пространства (путь внутри пространства), а не имя каталога."""
     shield = _load_shield()
-    nda_repo = make_repo(tmp_path / "Tydex-X" / "repo", _owner_remote(), {"README.txt": "synthetic\n"})
-    code = shield.audit_repository(nda_repo)
+    ws_root = tmp_path / "ws-a"
+    workspaces = [nda_workspace_at(ws_root)]
+    nda_repo = make_repo(ws_root / "repo", _owner_remote(), {"README.txt": "synthetic\n"})
+    code = shield.audit_repository(nda_repo, workspaces=workspaces)
     out = capsys.readouterr().out
     restricted = "RESTRICTED" in out
     critical = "CRITICAL" in out
@@ -223,7 +204,7 @@ def test_s01_script_detects_nda_by_path_substring(tmp_path, capsys):
     assert restricted
     assert critical
     plain_repo = make_repo(tmp_path / "plain" / "repo", OTHER_REMOTE, {"README.txt": "synthetic\n"})
-    plain_code = shield.audit_repository(plain_repo)
+    plain_code = shield.audit_repository(plain_repo, workspaces=workspaces)
     plain_out = capsys.readouterr().out
     public = "PUBLIC" in plain_out
     assert plain_code == 0
@@ -232,8 +213,9 @@ def test_s01_script_detects_nda_by_path_substring(tmp_path, capsys):
 
 def test_s02_script_nda_remote_violation(tmp_path, capsys):
     shield = _load_shield()
-    repo = make_repo(tmp_path / "tydex-work" / "repo", _owner_remote(), {"README.txt": "synthetic\n"})
-    code = shield.audit_repository(repo)
+    ws_root = tmp_path / "ws-b"
+    repo = make_repo(ws_root / "repo", _owner_remote(), {"README.txt": "synthetic\n"})
+    code = shield.audit_repository(repo, workspaces=[nda_workspace_at(ws_root)])
     out = capsys.readouterr().out
     critical = "CRITICAL" in out
     assert code == 1
@@ -242,19 +224,20 @@ def test_s02_script_nda_remote_violation(tmp_path, capsys):
 
 def test_s03_script_non_nda_same_remote_is_clean(tmp_path):
     shield = _load_shield()
+    workspaces = [nda_workspace_at(tmp_path / "ws-c")]
     repo = make_repo(tmp_path / "plain" / "repo", _owner_remote(), {"README.txt": "synthetic\n"})
-    assert shield.audit_repository(repo) == 0
+    assert shield.audit_repository(repo, workspaces=workspaces) == 0
 
 
 def test_s04_script_flags_each_keyword_in_public_repo(tmp_path):
     shield = _load_shield()
-    keywords = list(shield.CORPORATE_NDA_KEYWORDS)
+    keywords = owner_nda_keywords()
     total = len(keywords)
-    assert total >= 1, "список слов shield пуст"
+    assert total >= 1, "в данных пространства нет слов NDA"
     for index, word in enumerate(keywords):
         target = tmp_path / f"kw{index}.txt"
         target.write_text("line with " + word + " inside\n", encoding="utf-8")
-        found = shield.check_file_content(target, is_public_repo=True)
+        found = shield.check_file_content(target, is_public_repo=True, custom_keywords=[word])
         count = len(found)
         flagged = "Found proprietary corporate keyword" in found[0]
         assert count == 1, f"слово с номером {index}: нарушений {count}"
@@ -263,10 +246,10 @@ def test_s04_script_flags_each_keyword_in_public_repo(tmp_path):
 
 def test_s05_script_ignores_keywords_in_nda_repo(tmp_path):
     shield = _load_shield()
-    for index, word in enumerate(shield.CORPORATE_NDA_KEYWORDS):
+    for index, word in enumerate(owner_nda_keywords()):
         target = tmp_path / f"kw{index}.txt"
         target.write_text("line with " + word + " inside\n", encoding="utf-8")
-        found = shield.check_file_content(target, is_public_repo=False)
+        found = shield.check_file_content(target, is_public_repo=False, custom_keywords=[word])
         count = len(found)
         assert count == 0, f"слово с номером {index}: нарушений {count}"
 
@@ -333,7 +316,7 @@ def test_s09_script_read_error_is_violation(tmp_path, monkeypatch):
     assert flagged
 
 
-# --------------------------- паритет и дрейф: P02, P03 ---------------------------
+# --------------------------- паритет: P02 (P03 заменён тестом делегирования) ---------------------------
 
 
 def test_p02_web_patterns_subset_of_script():
@@ -344,17 +327,6 @@ def test_p02_web_patterns_subset_of_script():
     same = all(web[n] == script[n] for n in web)
     assert same
     assert [p.pattern for p in FORBIDDEN_FILES] == [p.pattern for p in shield.FORBIDDEN_FILES]
-
-
-def test_p03_shield_copies_identical():
-    core = Path(os.environ.get("ASSISTANT_CORE_DIR", "/opt/assistant-core"))
-    if not core.is_dir():
-        pytest.skip("assistant-core not available in isolated test mode")
-    other = core / "scripts" / "security_shield.py"
-    assert other.is_file(), "копия shield в assistant-core не найдена"
-    mine = hashlib.sha256(SHIELD_PATH.read_bytes()).hexdigest()
-    theirs = hashlib.sha256(other.read_bytes()).hexdigest()
-    assert mine == theirs
 
 
 # --------------------------- правила из данных: D01, D02, 503 ---------------------------

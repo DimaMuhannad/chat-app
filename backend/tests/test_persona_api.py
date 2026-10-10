@@ -1,6 +1,4 @@
-import importlib.util
 import json
-from pathlib import Path
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -22,14 +20,6 @@ PUBLIC_KEYS = {
     "ui",
 }
 AREA_KEYS = {"value", "label", "filter_label", "show_in_filter"}
-SHIELD_PATH = Path(__file__).resolve().parents[2] / "scripts" / "security_shield.py"
-
-
-def _shield_nda_words() -> list[str]:
-    spec = importlib.util.spec_from_file_location("_persona_api_shield", SHIELD_PATH)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return list(module.CORPORATE_NDA_KEYWORDS)
 
 
 @pytest.mark.anyio
@@ -87,7 +77,8 @@ async def test_persona_current_whitelist_only():
     assert workspaces, "у персоны по умолчанию нет пространств"
     remote_substrings = [s for ws in workspaces for s in ws["forbidden_remote_substrings"]]
     paths = [ws["path"] for ws in workspaces]
-    nda_words = _shield_nda_words()
+    # слова NDA - данные пространств персоны (forbidden_keywords), а не константа обёртки shield
+    nda_words = [word for ws in workspaces for word in ws["forbidden_keywords"]]
     assert remote_substrings and paths and nda_words
     leaked_nda = any(word.casefold() in body.casefold() for word in nda_words)
     leaked_remote = any(sub.casefold() in body.casefold() for sub in remote_substrings)

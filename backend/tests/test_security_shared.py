@@ -4,7 +4,6 @@ from pathlib import Path
 import pytest
 
 from assistant_shared.security import (
-    CORPORATE_NDA_KEYWORDS,
     DEFAULT_REMOTE_VIOLATION,
     FORBIDDEN_FILES,
     NdaRemoteRule,
@@ -13,6 +12,8 @@ from assistant_shared.security import (
     nda_rule_for,
     normalize_remote,
 )
+
+from .nda_helpers import owner_nda_keywords
 
 
 def test_secret_patterns_include_generic_bearer():
@@ -90,14 +91,14 @@ def test_check_file_content_forbidden_file(tmp_path: Path):
 def test_check_file_content_corporate_keywords(tmp_path: Path):
     """Проверяет обнаружение корпоративных ключевых слов NDA в публичных репозиториях."""
     code_file = tmp_path / "main.py"
-    kw = CORPORATE_NDA_KEYWORDS[0]
+    kw = owner_nda_keywords()[0]  # слово берётся из данных NDA-пространства, литерала в тесте нет
     code_file.write_text(f"val = '{kw}'\n", encoding="utf-8")
 
     # В публичном репозитории - нарушение
-    pub_violations = check_file_content(code_file, is_public_repo=True)
+    pub_violations = check_file_content(code_file, is_public_repo=True, custom_keywords=[kw])
     assert len(pub_violations) == 1
     assert "proprietary corporate keyword" in pub_violations[0]
 
     # В приватном NDA репозитории - разрешено
-    nda_violations = check_file_content(code_file, is_public_repo=False)
+    nda_violations = check_file_content(code_file, is_public_repo=False, custom_keywords=[kw])
     assert len(nda_violations) == 0
