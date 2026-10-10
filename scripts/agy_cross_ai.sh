@@ -22,14 +22,23 @@
 #   2) scripts/gate.py in the root of the --repo target: the target repository's own gate,
 #      run with python3 from that root (assistant-core has one since its phase 1);
 #   3) otherwise the chat-app gate next to this adapter, run from the chat-app root.
-# Why the target's gate can be trusted: scripts/gate.py is in PROTECTED, so a patch that
-# creates, changes or deletes it is refused with exit 12 before it is applied.
+# GATE_KIND names the choice: test (1), target (2), adapter-fallback (3). For adapter-fallback the
+# target repository is NOT checked by its own gate: stderr and the SUMMARY say so explicitly (WR-06).
+# Why the target's gate can be trusted: scripts/gate.py AND the files its environment executes
+# (tests/conftest.py, tests/live_db_guard.py, pytest.ini, pyproject.toml, scripts/deploy.py,
+# src/config.py, requirements*.txt) are in PROTECTED, so a patch that creates, changes or deletes
+# them is refused with exit 12 before it is applied (WR-05). Trust covers the gate file itself and
+# that listed environment, nothing else. A path equal to a parent directory of a protected file
+# (for example `scripts`) is protected too, and a symlinked `scripts` or `scripts/gate.py` is
+# refused with exit 17 before the agent starts and again right before the gate (T-uo4-02).
 #
 # Exit codes: 0 ok; 2 usage/empty prompt/not a git repo; 1,3,4,5,6 propagated from
 # agy_task.sh; 10 dirty tree outside .planning/; 11 no valid AGY_RESULT / not SUCCESS /
 # no changes / patch missing; 12 patch touches a protected path; 13 a path declared in
 # the prompt's files elements is not touched; 14 patch does not apply; 15 gate red (patch
-# reverted); 16 revert failed (manual intervention); 143 SIGTERM/SIGINT/SIGHUP.
+# reverted); 16 revert failed (manual intervention); 17 `scripts` or `scripts/gate.py` of the target is a symlink
+# (gate substitution risk; checked before the agent, and before the gate with the patch reverted);
+# 143 SIGTERM/SIGINT/SIGHUP.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -80,7 +89,24 @@ cat > "$WORK/helper.py" <<'PY'
 import posixpath, re, subprocess, sys
 
 PROTECTED = (".planning/", ".agents/", ".claude/", ".agy/", ".githooks/", ".git/", ".importlinter",
-             "scripts/gate.py", "scripts/agy_task.sh", "scripts/agy_cross_ai.sh", "scripts/security_shield.py")
+             "scripts/gate.py", "scripts/agy_task.sh", "scripts/agy_cross_ai.sh", "scripts/security_shield.py",
+             # WR-05: environment executed by the target's gate (a patch must not weaken it)
+             "tests/conftest.py", "tests/live_db_guard.py", "pytest.ini", "pyproject.toml",
+             "scripts/deploy.py", "src/config.py", "requirements.txt", "requirements-dev.txt")
+
+
+def _ancestor_dirs():
+    out = set()
+    for pref in PROTECTED:
+        parent = posixpath.dirname(pref.rstrip("/"))
+        while parent:
+            out.add(parent)
+            parent = posixpath.dirname(parent)
+    return out
+
+
+# T-uo4-02: a patch that replaces a directory such as `scripts` by a symlink touches only that path.
+ANCESTORS = _ancestor_dirs()
 
 
 def git_bytes(top, *args):
@@ -123,6 +149,8 @@ def touched(top, patch):
 
 
 def is_protected(path):
+    if path in ANCESTORS:
+        return True
     for pref in PROTECTED:
         if pref.endswith("/"):
             if path == pref[:-1] or path.startswith(pref):
@@ -181,6 +209,17 @@ if [ -n "$DIRTY" ]; then
   say "рабочее дерево изменено вне .planning/ — патч агента не должен смешиваться с чужими правками. Закоммить или убери:"
   sed 's/^/  /' <<<"$DIRTY" >&2
   fail 10 "отказ: грязное дерево; после коммита GSD предложит повторить"
+fi
+
+# T-uo4-02: a symlinked `scripts` or `scripts/gate.py` lets a patch or a commit swap the gate for any file.
+# Only relevant when the target's own gate may run, i.e. AGY_GATE_CMD (tests) is not set.
+gate_path_symlink() {
+  [ -z "${AGY_GATE_CMD:-}" ] || return 1
+  [ -L "$TOP/scripts" ] || [ -L "$TOP/scripts/gate.py" ]
+}
+
+if gate_path_symlink; then
+  fail 17 "отказ: scripts или scripts/gate.py цели — символическая ссылка (риск подмены гейта); агент не запускался"
 fi
 
 # ---------- revert / signals ----------
@@ -309,14 +348,26 @@ if [ "${#CREATED[@]}" -gt 0 ]; then
 fi
 
 # ---------- gate ----------
+if gate_path_symlink; then
+  say "scripts или scripts/gate.py цели стали символической ссылкой после применения патча — откатываю патч"
+  revert_patch || exit 16
+  fail 17 "отказ (задание $JOB_ID): риск подмены гейта; $INSPECT; $HINT"
+fi
 if [ -n "${AGY_GATE_CMD:-}" ]; then
+  GATE_KIND=test
   GATE=("$AGY_GATE_CMD"); GATE_DIR="$SCRIPT_DIR/.."
 elif [ -f "$TOP/scripts/gate.py" ]; then
+  GATE_KIND=target
   GATE=(python3 "$TOP/scripts/gate.py"); GATE_DIR="$TOP"
 else
+  GATE_KIND=adapter-fallback
   GATE=(python3 "$SCRIPT_DIR/gate.py"); GATE_DIR="$SCRIPT_DIR/.."
 fi
-say "гейт качества: ${GATE[*]} (каталог $GATE_DIR)"
+say "гейт качества ($GATE_KIND): ${GATE[*]} (каталог $GATE_DIR)"
+FALLBACK_WARNING="ВНИМАНИЕ: у целевого репозитория нет собственного гейта; выполнен гейт chat-app, цель им НЕ проверена"
+if [ "$GATE_KIND" = adapter-fallback ]; then
+  say "$FALLBACK_WARNING"
+fi
 GATE_LOG="$JOB_DIR/gate.log"
 set +e
 ( cd "$GATE_DIR" && exec "${GATE[@]}" ) < /dev/null > "$GATE_LOG" 2>&1 &
@@ -335,10 +386,10 @@ APPLIED=0
 
 # ---------- SUMMARY ----------
 python3 - "$TOP" "$PATCH" "$JOB_DIR" "$JOB_ID" "$GATE_LOG" \
-  "${R[model]:--}" "${R[input_tokens]:-0}" "${R[output_tokens]:-0}" <<'PY'
+  "${R[model]:--}" "${R[input_tokens]:-0}" "${R[output_tokens]:-0}" "$GATE_KIND" "$FALLBACK_WARNING" <<'PY'
 import json, subprocess, sys
 
-top, patch, job_dir, job_id, gate_log, model, tok_in, tok_out = sys.argv[1:9]
+top, patch, job_dir, job_id, gate_log, model, tok_in, tok_out, gate_kind, fallback_warning = sys.argv[1:11]
 
 
 def git(*args):
@@ -380,7 +431,9 @@ out += ["---", "", "# Исполнение плана агентом Antigravity
         "после проверок адаптера и зелёного гейта качества. Коммита нет.", "",
         "## Изменённые файлы", "", "```", stat, "```", "",
         "## Проверка", "",
-        f"Гейт качества целевого репозитория завершился с кодом 0. Журнал: {gate_log}", "",
+        (f"{fallback_warning}. Гейт chat-app завершился с кодом 0. Журнал: {gate_log}"
+         if gate_kind == "adapter-fallback"
+         else f"Гейт качества целевого репозитория завершился с кодом 0. Журнал: {gate_log}"), "",
         "## Ответ агента", "", quoted, "",
         "## ВНИМАНИЕ: правки НЕ ЗАКОММИЧЕНЫ", "",
         "changes are UNCOMMITTED — Claude orchestrator must review the diff and commit", "",

@@ -80,6 +80,16 @@ elif scenario == "protected":
     edit("new.txt", "new file\\n", "w")
     edit("scripts/gate.py", "# tampered\\n")
     reply()
+elif scenario == "touch":
+    edit("app.txt", "changed by agy\\n")
+    edit("new.txt", "new file\\n", "w")
+    edit(os.environ["AGY_STUB_TOUCH"], "# tampered\\n")
+    reply()
+elif scenario == "symlink_scripts":
+    edit("app.txt", "changed by agy\\n")
+    edit("new.txt", "new file\\n", "w")
+    os.symlink(".", "scripts")
+    reply()
 elif scenario == "partial":
     edit("app.txt", "changed by agy\\n")
     reply()
@@ -484,3 +494,155 @@ def test_fallback_to_adapter_gate_when_repo_has_none(sandbox: Sandbox):
     assert res.returncode == 0, res.stderr
     assert sandbox.gate_log.read_text().splitlines() == [f"{home / 'scripts' / 'gate.py'}|{home}"], res.stderr
     assert commit_count(sandbox.repo) == before
+
+
+# ---------------------------------------------------------------- WR-05: окружение гейта защищено
+
+FALLBACK_WARNING = "ВНИМАНИЕ: у целевого репозитория нет собственного гейта; выполнен гейт chat-app, цель им НЕ проверена"
+
+GATE_ENV_PATHS = [
+    "tests/conftest.py",
+    "tests/live_db_guard.py",
+    "pytest.ini",
+    "pyproject.toml",
+    "scripts/deploy.py",
+    "src/config.py",
+    "requirements.txt",
+    "requirements-dev.txt",
+]
+
+
+@pytest.mark.parametrize("protected_path", GATE_ENV_PATHS)
+def test_gate_environment_path_refused(sandbox: Sandbox, protected_path: str):
+    """Патч агента, трогающий файл окружения гейта цели, отвергается кодом 12 (WR-05)."""
+    sandbox.env["AGY_STUB_SCENARIO"] = "touch"
+    sandbox.env["AGY_STUB_TOUCH"] = protected_path
+    before = commit_count(sandbox.repo)
+    res = run_adapter(sandbox)
+    assert res.returncode == 12, res.stderr
+    assert f"  {protected_path}" in res.stderr
+    assert agy_calls(sandbox) == 1
+    assert_untouched(sandbox, before)
+    assert not sandbox.gate_log.exists()
+    assert not (sandbox.repo / protected_path).exists()
+
+
+def test_scripts_directory_replaced_by_symlink_refused(sandbox: Sandbox):
+    """Репозиторий без отслеживаемого scripts/: патч с ссылкой `scripts` трогает только этот путь (T-uo4-02)."""
+    git(sandbox.repo, "rm", "-q", "scripts/gate.py")
+    git(sandbox.repo, "commit", "-q", "-m", "drop scripts")
+    sandbox.env["AGY_STUB_SCENARIO"] = "symlink_scripts"
+    before = commit_count(sandbox.repo)
+    res = run_adapter(sandbox)
+    assert res.returncode == 12, res.stderr
+    assert re.search(r"^  scripts$", res.stderr, re.MULTILINE), res.stderr
+    assert agy_calls(sandbox) == 1
+    assert_untouched(sandbox, before)
+    assert not (sandbox.repo / "scripts").exists()
+    assert not sandbox.gate_log.exists()
+
+
+# ---------------------------------------------------------------- T-uo4-02: ссылка вместо гейта (код 17)
+
+
+def _commit_symlinked_gate(sb: Sandbox, kind: str) -> None:
+    repo = sb.repo
+    git(repo, "rm", "-q", "scripts/gate.py")
+    if kind == "dir":
+        write_exec(repo / "realscripts" / "gate.py", PY_GATE_STUB)
+        (repo / "scripts").symlink_to("realscripts")
+    else:
+        write_exec(repo / "scripts" / "real_gate.py", PY_GATE_STUB)
+        (repo / "scripts" / "gate.py").symlink_to("real_gate.py")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", f"symlinked gate ({kind})")
+
+
+@pytest.mark.parametrize("kind", ["dir", "file"])
+def test_symlinked_gate_path_refused_before_agent(sandbox: Sandbox, kind: str):
+    """Закоммиченная ссылка вместо scripts или scripts/gate.py: отказ 17, агент не вызван."""
+    _commit_symlinked_gate(sandbox, kind)
+    home = adapter_copy(sandbox)  # заглушка gate.py рядом с копией: настоящий гейт не вызовется никогда
+    before = commit_count(sandbox.repo)
+    res = run_adapter(sandbox, adapter=home / "scripts" / "agy_cross_ai.sh")
+    assert res.returncode == 17, res.stderr
+    assert "символическая ссылка" in res.stderr
+    assert not sandbox.agy_log.exists()
+    assert not sandbox.gate_log.exists()
+    assert_untouched(sandbox, before)
+
+
+def test_symlinked_gate_path_ignored_with_test_gate_cmd(sandbox: Sandbox):
+    """AGY_GATE_CMD (только тесты) задан: проверка ссылки не применяется, прежнее поведение."""
+    _commit_symlinked_gate(sandbox, "dir")
+    res = run_adapter(sandbox)
+    assert res.returncode == 0, res.stderr
+
+
+def test_gate_path_turned_into_symlink_before_gate_reverts_patch(sandbox: Sandbox):
+    """Повторная проверка перед гейтом: ссылка появилась после применения патча -> откат и код 17."""
+    home = adapter_copy(sandbox)
+    real_git = subprocess.run(["which", "git"], capture_output=True, text=True, check=True).stdout.strip()
+    shim = sandbox.tmp / "shim3"
+    write_exec(
+        shim / "git",
+        f"""#!/usr/bin/env bash
+# тестовая подмена: после настоящего применения патча адаптером подменяет scripts/gate.py ссылкой
+{real_git} "$@"
+rc=$?
+if [ "$rc" -eq 0 ] && [ "$1" = "-C" ] && [ "$2" = "{sandbox.repo.resolve()}" ] && [ "$3" = "apply" ]; then
+  case " $* " in
+    *" --whitespace=nowarn "*)
+      case " $* " in *" --check "*|*" -R "*) ;; *)
+        rm -f "$2/scripts/gate.py"; ln -s ../app.txt "$2/scripts/gate.py" ;;
+      esac ;;
+  esac
+fi
+exit "$rc"
+""",
+    )
+    sandbox.env["PATH"] = f"{shim}:{sandbox.env['PATH']}"
+    before = commit_count(sandbox.repo)
+    res = run_adapter(sandbox, adapter=home / "scripts" / "agy_cross_ai.sh")
+    assert res.returncode == 17, res.stderr
+    assert agy_calls(sandbox) == 1
+    assert not sandbox.gate_log.exists()
+    assert (sandbox.repo / "app.txt").read_text() == "base app\n"
+    assert not (sandbox.repo / "new.txt").exists()
+    assert commit_count(sandbox.repo) == before
+
+
+# ---------------------------------------------------------------- WR-06: вид гейта (GATE_KIND)
+
+
+def test_fallback_gate_warns_in_stderr_and_summary(sandbox: Sandbox):
+    """У цели нет scripts/gate.py: SUMMARY и stderr честно говорят, что цель гейтом не проверена."""
+    git(sandbox.repo, "rm", "-q", "scripts/gate.py")
+    git(sandbox.repo, "commit", "-q", "-m", "drop gate")
+    home = adapter_copy(sandbox)
+    res = run_adapter(sandbox, adapter=home / "scripts" / "agy_cross_ai.sh")
+    assert res.returncode == 0, res.stderr
+    assert FALLBACK_WARNING in res.stdout
+    assert FALLBACK_WARNING in res.stderr
+    assert "adapter-fallback" in res.stderr
+    assert "Гейт качества целевого репозитория завершился" not in res.stdout
+
+
+def test_target_gate_has_no_fallback_warning(sandbox: Sandbox):
+    write_exec(sandbox.repo / "scripts" / "gate.py", PY_GATE_STUB)
+    git(sandbox.repo, "add", "-A")
+    git(sandbox.repo, "commit", "-q", "-m", "target gate stub")
+    home = adapter_copy(sandbox)
+    res = run_adapter(sandbox, adapter=home / "scripts" / "agy_cross_ai.sh")
+    assert res.returncode == 0, res.stderr
+    assert "ВНИМАНИЕ: у целевого" not in res.stdout and "ВНИМАНИЕ: у целевого" not in res.stderr
+    assert "Гейт качества целевого репозитория завершился с кодом 0" in res.stdout
+    assert "(target)" in res.stderr
+
+
+def test_test_gate_cmd_has_no_fallback_warning(sandbox: Sandbox):
+    res = run_adapter(sandbox)
+    assert res.returncode == 0, res.stderr
+    assert "ВНИМАНИЕ: у целевого" not in res.stdout and "ВНИМАНИЕ: у целевого" not in res.stderr
+    assert "Гейт качества целевого репозитория завершился с кодом 0" in res.stdout
+    assert "(test)" in res.stderr

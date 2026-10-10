@@ -30,11 +30,11 @@ def test_secret_patterns_include_generic_bearer():
 
 def test_normalize_remote_formats():
     """Проверяет корректность нормализации remote url для HTTPS, SSH и SCP форматов (WR-07)."""
-    expected = "github.com/dimamuhannad/chat-app"
-    assert normalize_remote("https://github.com/DimaMuhannad/chat-app.git") == expected
-    assert normalize_remote("ssh://git@github.com/DimaMuhannad/chat-app") == expected
-    assert normalize_remote("git@github.com:DimaMuhannad/chat-app.git") == expected
-    assert normalize_remote("http://github.com/dimamuhannad/chat-app/") == expected
+    expected = "git.example.org/exampleorg/chat-app"
+    assert normalize_remote("https://git.example.org/ExampleOrg/chat-app.git") == expected
+    assert normalize_remote("ssh://git@git.example.org/ExampleOrg/chat-app") == expected
+    assert normalize_remote("git@git.example.org:ExampleOrg/chat-app.git") == expected
+    assert normalize_remote("http://git.example.org/exampleorg/chat-app/") == expected
 
 
 def test_nda_rule_for_clearance():
